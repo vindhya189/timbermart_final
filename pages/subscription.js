@@ -21,7 +21,7 @@ const PLANS = [
     id: 'premium',
     name: 'Premium Listing',
     price: 99,
-    days: '30 Days',
+    days: '14 Days',
     features: ['Top of Home Page', 'Premium Badge', '30 Days Validity', '3x More Views', 'Priority Support'],
     color: 'bg-yellow-50 border-yellow-300',
     btn: 'Pay ₹99',
@@ -32,7 +32,7 @@ const PLANS = [
     id: 'carpenter',
     name: 'Carpenter Pro',
     price: 149,
-    days: '30 Days',
+    days: '14 Days',
     features: ['Top in Carpenter List', 'Pro Badge', 'Unlimited Leads', '30 Days Validity'],
     color: 'bg-orange-50 border-orange-300',
     btn: 'Pay ₹149',
@@ -42,7 +42,7 @@ const PLANS = [
     id: 'business',
     name: 'Business - 10 Listings',
     price: 499,
-    days: '30 Days',
+    days: '14 Days',
     features: ['10 Premium Listings', 'All Premium Benefits', 'Dedicated Support'],
     color: 'bg-blue-50 border-blue-300',
     btn: 'Pay ₹499',
@@ -515,7 +515,7 @@ export default function Subscription() {
               <p className="text-center text-[10px] text-gray-500 mt-4 leading-5">
                 Premium promotion is valid for 14 days.
                 <br />
-                After expiry, your listing continues as a normal listing.
+                After expiry, your listing will be deleted.
               </p>
             </div>
           )}

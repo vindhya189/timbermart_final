@@ -30,10 +30,12 @@ export default function ProductPage() {
 
       try {
         const { data, error: lotError } = await supabase
-          .from('listings')
-          .select('*')
-          .eq('listing_id', id)
-          .single();
+  .from('listings')
+  .select('*')
+  .eq('listing_id', id)
+  .neq('status', 'expired')
+  .gt('expires_at', new Date().toISOString())
+  .single();
 
         if (lotError) throw lotError;
 

@@ -82,11 +82,12 @@ export default function Home() {
 
     try {
       const { data, error } = await supabase
-        .from('listings')
-        .select('*, listing_images(image_url)')
-        .eq('status', 'approved')
-        .order('created_at', { ascending: false })
-        .limit(200);
+  .from('listings')
+  .select('*, listing_images(image_url)')
+  .eq('status', 'approved')
+  .gt('expires_at', new Date().toISOString())
+  .order('created_at', { ascending: false })
+  .limit(200);
 
       if (error) throw error;
 
