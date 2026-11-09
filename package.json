@@ -1,0 +1,32 @@
+{
+  "name": "timbermart-final",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
+    "axios": "^1.21.0",
+    "date-fns": "^4.4.0",
+    "digipin": "^0.0.1",
+    "eslint-config-next": "^16.4.5",
+    "framer-motion": "^14.10.1",
+    "lucide-react": "^1.70.0",
+    "next": "^16.4.5",
+    "razorpay": "^2.9.8",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-icons": "^5.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.5",
+    "@types/react": "19.3.0",
+    "autoprefixer": "^10.6.2",
+    "postcss": "^8.5.32",
+    "tailwindcss": "^3.4.19",
+    "typescript": "7.0.2"
+  }
+}

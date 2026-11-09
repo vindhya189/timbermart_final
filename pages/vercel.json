@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/expire-listings",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/send-expiry-alerts",
+      "schedule": "0 9 * * *"
+    }
+  ]
+}
