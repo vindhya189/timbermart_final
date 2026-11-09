@@ -68,6 +68,7 @@ export default function Home() {
 
   const [tab, setTab] = useState('All');
   const [showFilters, setShowFilters] = useState(false);
+  const [showWhatsAppMenu, setShowWhatsAppMenu] = useState(false);
 
   // Favorites now come from Supabase
   const [favs, setFavs] = useState([]);
@@ -1001,6 +1002,75 @@ export default function Home() {
           )}
 
         </div>
+        {/* FLOATING WHATSAPP SUPPORT */}
+<div className="fixed bottom-24 right-4 z-50">
+
+  {showWhatsAppMenu && (
+    <div className="mb-3 w-60 bg-white rounded-2xl shadow-2xl border p-3">
+
+      <p className="font-black text-sm text-gray-800">
+        TimberMart Support 👋
+      </p>
+
+      <p className="text-[10px] text-gray-500 mt-1 mb-3">
+        How can we help you?
+      </p>
+
+      <a
+        href="https://wa.me/918985364488?text=Hi%20TimberMart%2C%20I%20have%20an%20enquiry."
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block bg-green-50 rounded-xl p-3 mb-2"
+      >
+        <p className="text-xs font-bold text-green-800">
+          💬 More Enquiries
+        </p>
+        <p className="text-[10px] text-gray-500">
+          Ask about TimberMart services
+        </p>
+      </a>
+
+      <a
+        href="https://wa.me/918985364488?text=Hi%20TimberMart%2C%20I%20want%20to%20share%20feedback."
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block bg-green-50 rounded-xl p-3 mb-2"
+      >
+        <p className="text-xs font-bold text-green-800">
+          ⭐ Feedback
+        </p>
+        <p className="text-[10px] text-gray-500">
+          Share your suggestions
+        </p>
+      </a>
+
+      <a
+        href="https://wa.me/918985364488?text=Hi%20TimberMart%2C%20I%20need%20customer%20support."
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block bg-green-50 rounded-xl p-3"
+      >
+        <p className="text-xs font-bold text-green-800">
+          🎧 Customer Support
+        </p>
+        <p className="text-[10px] text-gray-500">
+          Get help with any issue
+        </p>
+      </a>
+
+    </div>
+  )}
+
+  <button
+    type="button"
+    onClick={() => setShowWhatsAppMenu(prev => !prev)}
+    className="ml-auto w-14 h-14 rounded-full bg-[#25D366] text-white shadow-xl flex items-center justify-center text-3xl border-2 border-white"
+    aria-label="WhatsApp Support"
+  >
+    {showWhatsAppMenu ? '✕' : '☏'}
+  </button>
+
+</div>
 
         {/* BOTTOM BAR */}
         <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t px-4 py-3 flex justify-between items-center z-30">
