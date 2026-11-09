@@ -1,9 +1,9 @@
-// pages/list-timber.js - List Timber - Pure English - DPDP Consent - Admin Approval - Get Location + DIGIPIN
 import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+import { supabase } from '../lib/supabase';
+import TreeLoader from '../components/TreeLoader';
 
+// COMPLETE WOOD SPECIES
 const WOOD_CATEGORIES = [
   { category: "Premium Hardwood - Teak / Sal / Rosewood", species: ["Teak Wood - Sagwan","Burma Teak - Original","CP Teak - Central Province","Nilambur Teak - Kerala","Karnataka Teak","Assam Teak","Godavari Teak","Sal Wood - Sakhu","Sheesham - Rosewood","Rosewood - Black Sheesham","Ebony - Karungali","Mahogany - Mahagani","Walnut - Akhrot","Padouk - Padauk","Wenge","Iroko","Bijasal","Haldu"] },
   { category: "Softwood - Pine / Deodar / Cedar", species: ["Pine Wood - Chir Pine","Deodar - Devadaru","Cedar - Devdar","Kail - Blue Pine","Spruce","Fir - Silver Fir","Cypress","Larch","Hollong","Hollock","Silver Oak - Silver Oak","Poplar - Populus","Kadamba - Kadam","Simul - Silk Cotton"] },
@@ -25,199 +25,1288 @@ const CUTTING_CATEGORIES = [
   { category: "Custom / Mixed Cutting", sizes: ["Mixed Cut Sizes - Mixed","Custom Size - As per Order","Log Cutting - As per Requirement","Sawn Sizes - Sawn","Rough Sawn - Rough","Dressed / Planed - Dressed","Finger Joint - Finger Joint"] }
 ];
 
-const PLYWOOD_BRANDS = ["CenturyPly - Sainik 710 (BWP)","CenturyPly - Architect Ply (BWR)","CenturyPly - Club Prime","Greenply - Green Club 700","Greenply - Green Gold","Greenply - Green Platinum","Kitply - Kitply Gold","Kitply - Kitply Vista","National Plywood - National Gold","Duroply - Duro Green","Sarda - Sarda Gold","Anchor - Anchor Gold","Merino - Merino Ply","Austin Plywood - Austin Gold","Uniteply - Uniteply"];
-const PLYWOOD_TYPES = ["MR - Moisture Resistant","BWR - Boiling Water Resistant","BWP - Boiling Water Proof / Marine","Flexible Plywood - Bendable","Film Faced Shuttering - Black Film","Commercial Ply - General","Calibrated Ply - Calibrated","Gurjan Ply - Gurjan Face","Teak Ply - Teak Face"];
+const PLYWOOD_BRANDS = [
+  "CenturyPly - Sainik 710 (BWP)","CenturyPly - Architect Ply (BWR)","CenturyPly - Club Prime","Greenply - Green Club 700","Greenply - Green Gold","Greenply - Green Platinum","Kitply - Kitply Gold","Kitply - Kitply Vista","National Plywood - National Gold","Duroply - Duro Green","Sarda - Sarda Gold","Anchor - Anchor Gold","Merino - Merino Ply","Austin Plywood - Austin Gold","Uniteply - Uniteply"
+];
+
+const PLYWOOD_TYPES = [
+  "MR - Moisture Resistant","BWR - Boiling Water Resistant","BWP - Boiling Water Proof / Marine","Flexible Plywood - Bendable","Film Faced Shuttering - Black Film","Commercial Ply - General","Calibrated Ply - Calibrated","Gurjan Ply - Gurjan Face","Teak Ply - Teak Face"
+];
 
 export default function ListTimber() {
   const [role, setRole] = useState('seller');
   const [productType, setProductType] = useState('logs');
   const [species, setSpecies] = useState('Teak Wood - Sagwan');
+
   const [cutSize, setCutSize] = useState('');
   const [plyBrand, setPlyBrand] = useState('');
   const [plyType, setPlyType] = useState('');
+
   const [logsCount, setLogsCount] = useState('');
   const [pieces, setPieces] = useState('');
   const [cft, setCft] = useState('');
   const [unitPrice, setUnitPrice] = useState('');
   const [unitType, setUnitType] = useState('CFT');
-  const [village, setVillage] = useState('Anakapalle');
+
+  const [title, setTitle] = useState('');
+
+  // Complete address
+  const [houseNumber, setHouseNumber] = useState('');
+  const [street, setStreet] = useState('');
+  const [village, setVillage] = useState('');
+  const [mandal, setMandal] = useState('');
   const [district, setDistrict] = useState('');
+  const [stateName, setStateName] = useState('Andhra Pradesh');
+  const [pincode, setPincode] = useState('');
+
+  // Authenticated user profile
+  const [userId, setUserId] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileError, setProfileError] = useState('');
+
+  // Girth
   const [girthMode, setGirthMode] = useState('single');
   const [girth, setGirth] = useState('');
   const [girthMin, setGirthMin] = useState('');
   const [girthMax, setGirthMax] = useState('');
   const [mixedGirths, setMixedGirths] = useState('');
+
+  // Length
   const [lengthMode, setLengthMode] = useState('single');
-  const [lengthFt, setLengthFt] = useState('');
+  const [length, setLength] = useState('');
+  const [lengthMin, setLengthMin] = useState('');
+  const [lengthMax, setLengthMax] = useState('');
   const [mixedLengths, setMixedLengths] = useState('');
+
+  // Width
   const [widthMode, setWidthMode] = useState('single');
   const [width, setWidth] = useState('');
+  const [widthMin, setWidthMin] = useState('');
+  const [widthMax, setWidthMax] = useState('');
   const [mixedWidths, setMixedWidths] = useState('');
+
+  // Thickness
+  const [thicknessMode, setThicknessMode] = useState('single');
   const [thickness, setThickness] = useState('');
-  const [images, setImages] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [title, setTitle] = useState('');
-  const [lat, setLat] = useState('');
-  const [lng, setLng] = useState('');
+  const [thicknessMin, setThicknessMin] = useState('');
+  const [thicknessMax, setThicknessMax] = useState('');
+  const [mixedThickness, setMixedThickness] = useState('');
+
+  // Cut length
+  const [cutLengthMode, setCutLengthMode] = useState('single');
+  const [cutLength, setCutLength] = useState('');
+  const [cutLengthMin, setCutLengthMin] = useState('');
+  const [cutLengthMax, setCutLengthMax] = useState('');
+  const [mixedCutLengths, setMixedCutLengths] = useState('');
+
+  const [urgency, setUrgency] = useState('Normal');
+  const [requirementType, setRequirementType] = useState('');
+  const [budgetMin, setBudgetMin] = useState('');
+  const [budgetMax, setBudgetMax] = useState('');
+
+  const [photos, setPhotos] = useState([]);
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
   const [digipin, setDigipin] = useState('');
-  const [locLoading, setLocLoading] = useState(false);
   const [consent, setConsent] = useState(false);
-  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+    const inputClass =
+    "w-full border border-gray-300 rounded-xl px-3 py-3 text-sm bg-white outline-none focus:border-amber-600";
 
-  useEffect(() => {
-    const p = localStorage.getItem('timber_phone');
-    const v = localStorage.getItem('timber_village');
-    if (p) setWhatsapp(p);
-    if (v) setVillage(v);
-  }, []);
+ // Load registered phone from authenticated Supabase session
+useEffect(() => {
+  let active = true;
 
+  async function loadProfile() {
+    setProfileLoading(true);
+    setProfileError('');
+
+    try {
+      // Get currently logged-in Supabase user
+      const {
+        data: { user },
+        error: authError
+      } = await supabase.auth.getUser();
+
+      if (authError) throw authError;
+
+      if (!user) {
+        throw new Error('Please login again.');
+      }
+
+      // Fetch profile using authenticated user ID
+      const { data: profile, error } = await supabase
+        .from('users_profile')
+        .select('id, phone, location')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+
+      if (!profile || !profile.phone) {
+        throw new Error('Registered phone number not found in profile.');
+      }
+
+      if (active) {
+        setUserId(profile.id);
+        setWhatsapp(String(profile.phone));
+
+        if (profile.location) {
+          setVillage(profile.location);
+        }
+      }
+    } catch (error) {
+      console.error('Profile loading error:', error);
+
+      if (active) {
+        setProfileError(error.message || 'Unable to load registered profile.');
+      }
+    } finally {
+      if (active) {
+        setProfileLoading(false);
+      }
+    }
+  }
+
+  loadProfile();
+
+  return () => {
+    active = false;
+  };
+}, []);
+  // Automatically generate listing title
   useEffect(() => {
     const count = logsCount || pieces || '';
-    let t = '';
+    let generatedTitle = '';
+
     if (productType === 'logs') {
-      if (count && species) t = `${count} ${species.split(' - ')[0]} Logs ${girthMode === 'mixed' ? 'Mixed Girth' : girth ? girth + ' inch' : ''}`;
+      generatedTitle =
+        `${count} ${species.split(' - ')[0]} Logs ` +
+        (girthMode === 'mixed'
+          ? 'Mixed Girth'
+          : girth
+            ? `${girth} inch`
+            : '');
     } else {
-      if (species) t = `${species.split(' - ')[0]} ${cutSize || 'Cut Sizes'} ${count ? count + ' pcs' : ''}`;
+      generatedTitle =
+        `${species.split(' - ')[0]} ${cutSize || 'Cut Sizes'} ` +
+        (count ? `${count} pieces` : '');
     }
-    setTitle(t.trim());
-  }, [species, logsCount, pieces, girth, girthMode, productType, cutSize]);
 
-  const totalPrice = unitPrice && cft ? (Number(unitPrice) * Number(cft)).toFixed(0) : unitPrice && (logsCount || pieces) ? (Number(unitPrice) * Number(logsCount || pieces)).toFixed(0) : '';
-  const isPlywood = species.toLowerCase().includes('plywood') || species.toLowerCase().includes('mdf') || species.toLowerCase().includes('block board') || species.toLowerCase().includes('particle') || species.toLowerCase().includes('wpc') || species.toLowerCase().includes('centuryply') || species.toLowerCase().includes('greenply') || species.toLowerCase().includes('kitply');
+    setTitle(generatedTitle.trim());
+  }, [
+    species,
+    logsCount,
+    pieces,
+    girth,
+    girthMode,
+    productType,
+    cutSize
+  ]);
 
+  // Calculate total price
+  const totalPrice =
+    unitPrice && cft
+      ? (Number(unitPrice) * Number(cft)).toFixed(0)
+      : unitPrice && (logsCount || pieces)
+        ? (
+            Number(unitPrice) *
+            Number(logsCount || pieces)
+          ).toFixed(0)
+        : '';
+
+  const isPlywood =
+    /plywood|mdf|block board|particle|wpc|centuryply|greenply|kitply/i.test(
+      species
+    );
+
+  // DIGIPIN-like code generator
+  // Note: This is not the official Government DIGIPIN encoder.
   const generateDigipin = (la, lo) => {
     const chars = '23456789CFGHJMPQRVWX';
-    let code = ''; let v = Math.abs(la * 100000 + lo * 1000);
-    for (let i = 0; i < 10; i++) { code += chars[Math.floor(v % chars.length)]; v = Math.floor(v / chars.length) + (la + lo) * 100; if (i === 2 || i === 5) code += '-'; }
+    let code = '';
+    let value = Math.abs(la * 100000 + lo * 1000);
+
+    for (let i = 0; i < 10; i++) {
+      code += chars[Math.floor(value % chars.length)];
+      value = Math.floor(value / chars.length) + (la + lo) * 100;
+
+      if (i === 2 || i === 5) {
+        code += '-';
+      }
+    }
+
     return code.slice(0, 12).toUpperCase();
   };
 
+  // Get GPS location and address
   const getLocation = () => {
-    if (!navigator.geolocation) { alert('Location is not supported on this device'); return; }
-    setLocLoading(true);
-    navigator.geolocation.getCurrentPosition(async (pos) => {
-      const la = pos.coords.latitude, lo = pos.coords.longitude;
-      setLat(la.toFixed(6)); setLng(lo.toFixed(6));
-      const pin = generateDigipin(la, lo); setDigipin(pin);
-      try {
-        const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${la}&lon=${lo}`);
-        const d = await r.json();
-        if (d.address?.village || d.address?.town || d.address?.suburb) setVillage(d.address.village || d.address.town || d.address.suburb);
-        if (d.address?.state_district) setDistrict(d.address.state_district);
-      } catch {}
-      setLocLoading(false);
-    }, () => { setLocLoading(false); alert('Please allow location access'); }, { enableHighAccuracy: true });
-  };
+    if (!navigator.geolocation) {
+      alert('Location is not supported on this device.');
+      return;
+    }
 
-  const handlePublish = async () => {
-    if (!species || !whatsapp || whatsapp.length < 10 || !village || !unitPrice) { alert('Please fill Species, Village, WhatsApp Number and Price'); return; }
-    if (images.length === 0) { alert('Please upload at least 1 photo'); return; }
-    if (!consent) { alert('Please accept the Privacy Policy to continue'); return; }
     setLoading(true);
-    try {
-      const listingId = 'TM-' + Math.random().toString(36).substring(2, 6).toUpperCase() + Math.floor(Math.random() * 90 + 10);
-      const { error } = await supabase.from('listings').insert([{
-        listing_id: listingId, title: title || `${species} - ${village}`, species, product_type: productType, user_role: role,
-        logs_count: logsCount ? Number(logsCount) : null, pieces: pieces ? Number(pieces) : null, cft: cft ? Number(cft) : null,
-        unit_price: Number(unitPrice), unit_type: unitType, total_price: totalPrice ? Number(totalPrice) : null,
-        location_village: village, location_district: district, whatsapp_number: whatsapp,
-        girth_mode: girthMode, girth_inch: girth ? Number(girth) : null, girth_min: girthMin ? Number(girthMin) : null, girth_max: girthMax ? Number(girthMax) : null,
-        mixed_girths_text: mixedGirths, length_mode: lengthMode, length_ft: lengthFt ? Number(lengthFt) : null,
-        mixed_lengths_text: mixedLengths, width_mode: widthMode, width: width, mixed_widths_text: mixedWidths,
-        thickness: thickness, cut_size: cutSize, plywood_brand: plyBrand, plywood_type: plyType,
-        latitude: lat ? Number(lat) : null, longitude: lng ? Number(lng) : null, digipin: digipin || null,
-        status: 'pending', is_verified: false, is_premium: false, expiry_days: 10,
-        consent_given: true, consent_at: new Date().toISOString(), consent_version: 'DPDP-2023-v1'
-      }]);
-      if (error) throw error;
-      for (let i = 0; i < images.length; i++) {
-        const file = images[i]; const fileName = `${Date.now()}_${i}_${file.name}`;
-        await supabase.storage.from('timber-images').upload(`${listingId}/${fileName}`, file);
-        const { data } = supabase.storage.from('timber-images').getPublicUrl(`${listingId}/${fileName}`);
-        await supabase.from('listing_images').insert([{ listing_id: listingId, image_url: data.publicUrl }]);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const la = position.coords.latitude;
+        const lo = position.coords.longitude;
+
+        setLatitude(la.toFixed(6));
+        setLongitude(lo.toFixed(6));
+        setDigipin(generateDigipin(la, lo));
+
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${la}&lon=${lo}`
+          );
+
+          if (!response.ok) {
+            throw new Error('Address lookup failed');
+          }
+
+          const result = await response.json();
+          const a = result.address || {};
+
+          setHouseNumber(a.house_number || '');
+
+          setStreet(
+            a.road ||
+            a.neighbourhood ||
+            a.suburb ||
+            ''
+          );
+
+          setVillage(
+            a.village ||
+            a.town ||
+            a.city ||
+            a.suburb ||
+            ''
+          );
+
+          setMandal(
+            a.county ||
+            a.municipality ||
+            ''
+          );
+
+          setDistrict(
+            a.state_district ||
+            a.district ||
+            ''
+          );
+
+          setStateName(a.state || 'Andhra Pradesh');
+          setPincode(a.postcode || '');
+
+          alert('GPS location captured successfully.');
+        } catch (error) {
+          alert('GPS captured. Please enter your full address manually.');
+        } finally {
+          setLoading(false);
+        }
+      },
+      () => {
+        setLoading(false);
+        alert('Location permission allow cheyyandi.');
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000
       }
-      localStorage.setItem('timber_phone', whatsapp); localStorage.setItem('timber_village', village);
-      alert(`Submitted for Admin Approval. ID: ${listingId}`);
-      window.location.href = `/profile`;
-    } catch (e) { alert(e.message); }
-    setLoading(false);
+    );
   };
 
+  // Select listing photos
+  const handlePhotoChange = (e) => {
+    const selectedFiles = Array.from(e.target.files || []);
+
+    if (selectedFiles.length > 3) {
+      alert('Maximum 3 photos only.');
+      e.target.value = '';
+      return;
+    }
+
+    const invalidFile = selectedFiles.find(
+      file => !file.type.startsWith('image/')
+    );
+
+    if (invalidFile) {
+      alert('Images matrame upload cheyyandi.');
+      e.target.value = '';
+      return;
+    }
+
+    setPhotos(selectedFiles);
+  };
+
+  // Remove selected photo
+  const removePhoto = (index) => {
+    setPhotos(prev => prev.filter((_, i) => i !== index));
+  };
+    // Publish listing
+  const handlePublish = async () => {
+    if (profileLoading) {
+      alert('Please wait. Loading your registered profile.');
+      return;
+    }
+
+    if (!userId || !whatsapp) {
+      alert(profileError || 'Please login again.');
+      return;
+    }
+
+    if (
+      !houseNumber.trim() ||
+      !street.trim() ||
+      !village.trim() ||
+      !mandal.trim() ||
+      !district.trim() ||
+      !stateName.trim() ||
+      !/^\d{6}$/.test(pincode)
+    ) {
+      alert('Please enter complete address and valid 6-digit PIN code.');
+      return;
+    }
+
+    if (!species || !unitPrice || Number(unitPrice) <= 0) {
+      alert('Please select wood species and enter a valid price.');
+      return;
+    }
+
+    if (photos.length === 0) {
+      alert('Please upload at least one photo.');
+      return;
+    }
+
+    if (!consent) {
+      alert('Please accept the Privacy Policy.');
+      return;
+    }
+
+    setLoading(true);
+    let listingId = '';
+
+    try {
+    
+// Verify registered profile using authenticated Supabase user ID
+const {
+  data: { user },
+  error: authError
+} = await supabase.auth.getUser();
+
+if (authError) throw authError;
+
+if (!user) {
+  throw new Error('Please login again.');
+}
+
+if (String(user.id) !== String(userId)) {
+  throw new Error('Account changed. Please refresh and login again.');
+}
+
+const { data: profile, error: profileError } = await supabase
+  .from('users_profile')
+  .select('id, phone')
+  .eq('id', user.id)
+  .single();
+
+if (profileError) throw profileError;
+
+if (!profile || !profile.phone) {
+  throw new Error('Registered phone number not found in users_profile.');
+}
+
+const registeredPhone = String(profile.phone).trim();
+
+
+      const fullAddress = [
+        houseNumber.trim(),
+        street.trim(),
+        village.trim(),
+        mandal.trim(),
+        district.trim(),
+        stateName.trim(),
+        pincode.trim()
+      ].join(', ');
+
+      listingId =
+        'TM-' +
+        Math.random().toString(36).substring(2, 6).toUpperCase() +
+        Math.floor(Math.random() * 90 + 10);
+
+      const count = logsCount || pieces;
+
+      const listing = {
+        listing_id: listingId,
+        title: title || `${species} - ${village}`,
+        species,
+        quantity: count
+          ? `${count} ${productType === 'logs' ? 'Logs' : 'Pieces'}`
+          : null,
+
+        price: String(unitPrice),
+        unit_price: Number(unitPrice),
+        unit_type: unitType,
+        total_price: totalPrice ? Number(totalPrice) : null,
+
+        product_type: productType,
+        user_role: role,
+
+        logs_count: logsCount ? Number(logsCount) : null,
+        pieces: pieces ? Number(pieces) : null,
+        cft: cft ? Number(cft) : null,
+
+        location_village: village.trim(),
+        location_mandal: mandal.trim(),
+        location_district: district.trim(),
+        location_state: stateName.trim(),
+
+        house_number: houseNumber.trim(),
+        street: street.trim(),
+        location_pincode: pincode.trim(),
+        full_address: fullAddress,
+
+        whatsapp_number: registeredPhone,
+        user_id: profile.id,
+
+        girth_mode: girthMode,
+        girth_inch: girth || null,
+        girth_min: girthMin || null,
+        girth_max: girthMax || null,
+        mixed_girths_text: mixedGirths || null,
+
+        length_mode: lengthMode,
+        length_ft: length || null,
+        length_min: lengthMin || null,
+        length_max: lengthMax || null,
+        mixed_lengths_text: mixedLengths || null,
+
+        width_mode: widthMode,
+        width: width || null,
+        width_min: widthMin || null,
+        width_max: widthMax || null,
+        mixed_widths_text: mixedWidths || null,
+
+        thickness_mode: thicknessMode,
+        thickness: thickness || null,
+        thickness_min: thicknessMin || null,
+        thickness_max: thicknessMax || null,
+        mixed_thickness_text: mixedThickness || null,
+
+        cut_length_mode: cutLengthMode,
+        cut_length: cutLength || null,
+        cut_length_min: cutLengthMin || null,
+        cut_length_max: cutLengthMax || null,
+        mixed_cut_lengths_text: mixedCutLengths || null,
+
+        cut_size: cutSize || null,
+        plywood_brand: plyBrand || null,
+        plywood_type: plyType || null,
+
+        latitude: latitude ? Number(latitude) : null,
+        longitude: longitude ? Number(longitude) : null,
+        digipin: digipin || null,
+
+        status: 'pending',
+        is_verified: false,
+        is_premium: false,
+        expiry_days: 10,
+
+        consent_given: true,
+        consent_at: new Date().toISOString(),
+        consent_version: 'DPDP-2023-v1'
+      };
+
+      const { error: insertError } = await supabase
+        .from('listings')
+        .insert([listing]);
+
+      if (insertError) throw insertError;
+
+      // Upload listing photos
+      for (let i = 0; i < photos.length; i++) {
+        const file = photos[i];
+
+        const cleanName = file.name.replace(
+          /[^a-zA-Z0-9._-]/g,
+          '_'
+        );
+
+        const fileName =
+          `${listingId}/${Date.now()}_${i}_${cleanName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('timber-images')
+          .upload(fileName, file, {
+            upsert: false,
+            contentType: file.type || 'application/octet-stream'
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data: publicData } = supabase.storage
+          .from('timber-images')
+          .getPublicUrl(fileName);
+
+        const { error: imageError } = await supabase
+          .from('listing_images')
+          .insert([{
+            listing_id: listingId,
+            image_url: publicData.publicUrl
+          }]);
+
+        if (imageError) throw imageError;
+      }
+
+      alert(
+        `Listing submitted for admin approval. Listing ID: ${listingId}`
+      );
+
+      window.location.href = '/profile';
+
+    } catch (error) {
+      console.error('Listing submission error:', error);
+
+      alert(
+        `Listing submission failed: ${error.message || 'Unknown error'}`
+      );
+
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (profileLoading) {
   return (
-    <div className="min-h-screen bg-white flex justify-center"><div className="w-full max-w-[480px] min-h-screen pb-6">
-      <div className="bg-black text-white px-4 py-3 flex justify-between items-center sticky top-0 z-20"><Link href="/" className="text-[12px] font-bold">← HOME</Link><p className="font-black text-[14px]">LIST TIMBER</p><span className="bg-white text-black px-3 py-1 rounded-full text-[11px] font-bold">{images.length}/3</span></div>
-      <div className="px-4 pt-4">
+    <TreeLoader
+      message="Growing your TimberMart listing..."
+      fullScreen={true}
+    />
+  );
+}
+  return (
+    <div className="min-h-screen bg-gray-50 flex justify-center">
+      <div className="w-full max-w-[480px] min-h-screen bg-white pb-10">
 
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-3">
-          <p className="text-[11px] font-bold text-yellow-800">Admin approval is required</p>
-          <p className="text-[10px] text-yellow-700 mt-0.5">Your listing will be live after admin approval.</p>
+        {/* HEADER */}
+        <div className="bg-black text-white px-4 py-4 flex justify-between items-center sticky top-0 z-20">
+          <Link href="/" className="text-xs font-bold">
+            ← HOME
+          </Link>
+
+          <p className="font-black text-sm">LIST TIMBER</p>
+
+          <span className="bg-white text-black px-3 py-1 rounded-full text-xs font-bold">
+            {photos.length}/3
+          </span>
         </div>
 
-        <div className="bg-[#f2f2f2] rounded-full p-1 flex"><button onClick={() => setRole('seller')} className={`flex-1 py-3 rounded-full text-[12px] font-bold ${role === 'seller' ? 'bg-black text-white' : 'text-gray-600'}`}>SELLER</button><button onClick={() => setRole('buyer')} className={`flex-1 py-3 rounded-full text-[12px] font-bold ${role === 'buyer' ? 'bg-black text-white' : 'text-gray-600'}`}>BUYER</button></div>
-        <div className="flex gap-2 mt-3"><button onClick={() => setProductType('logs')} className={`flex-1 py-3 rounded-xl text-[12px] font-bold border ${productType === 'logs' ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-white'}`}>Logs - Round</button><button onClick={() => setProductType('cut_sizes')} className={`flex-1 py-3 rounded-xl text-[12px] font-bold border ${productType === 'cut_sizes' ? 'bg-black text-white' : 'bg-white'}`}>Cut Sizes</button></div>
+        <div className="p-4">
 
-        <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Title - Example: 30 Teak Logs, Mixed Girth" className="w-full border rounded-xl px-3 py-3 text-[13px] mt-4" />
-        <select value={species} onChange={e => setSpecies(e.target.value)} className="w-full border rounded-xl px-3 py-3 text-[13px] mt-3 bg-white"><option value="">Select Wood Species</option>{WOOD_CATEGORIES.map(cat => (<optgroup key={cat.category} label={cat.category}>{cat.species.map(s => <option key={s} value={s}>{s}</option>)}</optgroup>))}</select>
-
-        {isPlywood && <div className="grid grid-cols-2 gap-2 mt-3"><select value={plyBrand} onChange={e => setPlyBrand(e.target.value)} className="border rounded-xl px-3 py-3 text-[12px] bg-white"><option value="">Plywood Brand</option>{PLYWOOD_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}</select><select value={plyType} onChange={e => setPlyType(e.target.value)} className="border rounded-xl px-3 py-3 text-[12px] bg-white"><option value="">Plywood Type</option>{PLYWOOD_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select></div>}
-        {productType === 'cut_sizes' && <select value={cutSize} onChange={e => setCutSize(e.target.value)} className="w-full border rounded-xl px-3 py-3 text-[13px] mt-3 bg-white"><option value="">Select Cutting Size</option>{CUTTING_CATEGORIES.map(cat => (<optgroup key={cat.category} label={cat.category}>{cat.sizes.map(s => <option key={s} value={s}>{s}</option>)}</optgroup>))}</select>}
-
-        <div className="grid grid-cols-2 gap-2 mt-3"><input value={logsCount} onChange={e => setLogsCount(e.target.value)} type="number" placeholder={productType === 'logs' ? "Number of Logs" : "Number of Pieces"} className="border rounded-xl px-3 py-3 text-[13px]" /><input value={cft} onChange={e => setCft(e.target.value)} type="number" placeholder="Total CFT" className="border rounded-xl px-3 py-3 text-[13px]" /></div>
-        <div className="grid grid-cols-2 gap-2 mt-2"><input value={unitPrice} onChange={e => setUnitPrice(e.target.value)} type="number" placeholder="Price" className="border rounded-xl px-3 py-3 text-[13px]" /><select value={unitType} onChange={e => setUnitType(e.target.value)} className="border rounded-xl px-3 py-3 text-[13px] bg-white"><option value="CFT">Per CFT</option><option value="Piece">Per Piece</option><option value="SqFt">Per SqFt</option><option value="Kg">Per Kg</option><option value="Ton">Per Ton</option></select></div>
-        {totalPrice && <p className="text-right text-[12px] font-bold mt-1">Total ₹{totalPrice}</p>}
-
-        {productType === 'logs' && <>
-          <div className="flex gap-2 mt-4"><button onClick={() => setGirthMode('single')} className={`flex-1 py-2.5 rounded-full text-[11px] font-bold ${girthMode === 'single' ? 'bg-black text-white' : 'bg-[#f2f2f2]'}`}>Single Girth</button><button onClick={() => setGirthMode('range')} className={`flex-1 py-2.5 rounded-full text-[11px] font-bold ${girthMode === 'range' ? 'bg-black text-white' : 'bg-[#f2f2f2]'}`}>Range</button><button onClick={() => setGirthMode('mixed')} className={`flex-1 py-2.5 rounded-full text-[11px] font-bold ${girthMode === 'mixed' ? 'bg-black text-white' : 'bg-[#f2f2f2]'}`}>Mixed</button></div>
-          {girthMode === 'single' && <input value={girth} onChange={e => setGirth(e.target.value)} type="number" placeholder="Girth in inch - Example: 36" className="w-full border rounded-xl px-3 py-3 text-[13px] mt-2" />}
-          {girthMode === 'range' && <div className="grid grid-cols-2 gap-2 mt-2"><input value={girthMin} onChange={e => setGirthMin(e.target.value)} type="number" placeholder="Min Girth" className="border rounded-xl px-3 py-3 text-[13px]" /><input value={girthMax} onChange={e => setGirthMax(e.target.value)} type="number" placeholder="Max Girth" className="border rounded-xl px-3 py-3 text-[13px]" /></div>}
-          {girthMode === 'mixed' && <input value={mixedGirths} onChange={e => setMixedGirths(e.target.value)} placeholder="Mixed Girths - Example: 16-18, 20-22, 30+" className="w-full border rounded-xl px-3 py-3 text-[13px] mt-2" />}
-        </>}
-
-        <div className="flex gap-2 mt-4"><button onClick={() => setLengthMode('single')} className={`flex-1 py-2.5 rounded-full text-[11px] font-bold ${lengthMode === 'single' ? 'bg-black text-white' : 'bg-[#f2f2f2]'}`}>Single Length</button><button onClick={() => setLengthMode('mixed')} className={`flex-1 py-2.5 rounded-full text-[11px] font-bold ${lengthMode === 'mixed' ? 'bg-black text-white' : 'bg-[#f2f2f2]'}`}>Mixed Length</button></div>
-        {lengthMode === 'single' ? <input value={lengthFt} onChange={e => setLengthFt(e.target.value)} type="number" placeholder="Length in ft - Example: 8" className="w-full border rounded-xl px-3 py-3 text-[13px] mt-2" /> : <input value={mixedLengths} onChange={e => setMixedLengths(e.target.value)} placeholder="Mixed Lengths - Example: 6, 8, 10 ft" className="w-full border rounded-xl px-3 py-3 text-[13px] mt-2" />}
-
-        {productType === 'cut_sizes' && <>
-          <div className="flex gap-2 mt-4"><button onClick={() => setWidthMode('single')} className={`flex-1 py-2.5 rounded-full text-[11px] font-bold ${widthMode === 'single' ? 'bg-black text-white' : 'bg-[#f2f2f2]'}`}>Single Width</button><button onClick={() => setWidthMode('mixed')} className={`flex-1 py-2.5 rounded-full text-[11px] font-bold ${widthMode === 'mixed' ? 'bg-black text-white' : 'bg-[#f2f2f2]'}`}>Mixed Width</button></div>
-          {widthMode === 'single' ? <input value={width} onChange={e => setWidth(e.target.value)} placeholder="Width - Example: 6 inch" className="w-full border rounded-xl px-3 py-3 text-[13px] mt-2" /> : <input value={mixedWidths} onChange={e => setMixedWidths(e.target.value)} placeholder="Mixed Widths - Example: 4, 6, 8 inch" className="w-full border rounded-xl px-3 py-3 text-[13px] mt-2" />}
-          <input value={thickness} onChange={e => setThickness(e.target.value)} placeholder="Thickness - Example: 2 inch / 18mm" className="w-full border rounded-xl px-3 py-3 text-[13px] mt-2" />
-        </>}
-
-        {/* LOCATION + GET LOCATION + DIGIPIN */}
-        <div className="grid grid-cols-2 gap-2 mt-4"><input value={village} onChange={e => setVillage(e.target.value)} placeholder="Village / Town" className="border rounded-xl px-3 py-3 text-[13px]" /><input value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="WhatsApp Number" className="border rounded-xl px-3 py-3 text-[13px]" /></div>
-        <button onClick={getLocation} className="w-full mt-2 bg-blue-50 border border-blue-200 rounded-xl py-3 text-[12px] font-bold text-blue-700">{locLoading ? 'Getting Location...' : 'Get My Location'}</button>
-        {digipin && <div className="mt-2 bg-green-50 border border-green-200 rounded-xl p-3 flex justify-between"><div><p className="text-[11px] font-bold">DIGIPIN: {digipin}</p><p className="text-[10px] text-gray-500">{lat}, {lng} • {village} {district ? `• ${district}` : ''}</p></div><span className="text-green-600 font-bold">✓</span></div>}
-
-        {/* PHOTOS */}
-        <div className="border border-dashed rounded-xl p-4 mt-4 text-center"><input type="file" multiple accept="image/*" onChange={e => setImages(Array.from(e.target.files).slice(0, 3))} className="text-[12px]" /><p className="text-[11px] text-gray-500 mt-1">{images.length}/3 Photos</p>{images.length > 0 && <div className="flex gap-2 mt-2 justify-center">{images.map((f, i) => (<img key={i} src={URL.createObjectURL(f)} className="w-16 h-16 object-cover rounded-lg" />))}</div>}</div>
-
-        {/* DPDP CONSENT - REQUIRED */}
-        <label className="flex gap-2 mt-4 cursor-pointer">
-          <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} className="w-4 h-4 mt-0.5 shrink-0" />
-          <span className="text-[11px] text-gray-600 leading-snug">I agree to the <button type="button" onClick={() => setShowPrivacy(true)} className="text-blue-600 underline font-bold">Privacy Policy</button> and consent to the processing of my name, phone, location, and listing data as per the DPDP Act, 2023.</span>
-        </label>
-
-        <button onClick={handlePublish} disabled={loading} className="w-full bg-black text-white rounded-full py-4 font-bold text-[13px] mt-5">{loading ? 'Submitting...' : productType === 'logs' ? `Submit for Approval - ${girthMode === 'single' ? 'Single Girth' : girthMode === 'range' ? 'Range Girth' : 'Mixed Girth'}` : `Submit for Approval - ${cutSize || 'Custom'}`}</button>
-        <p className="text-center text-[10px] text-gray-400 mt-2">Your listing will be live after admin approval</p>
-      </div>
-
-      {/* PRIVACY - SHORT VIEW */}
-      {showPrivacy && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center" onClick={() => setShowPrivacy(false)}>
-          <div className="bg-white w-full max-w-[480px] max-h-[85vh] overflow-y-auto rounded-t-[24px] p-6" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between"><p className="font-black text-[16px]">Privacy Policy</p><button onClick={() => setShowPrivacy(false)} className="w-8 h-8 bg-[#f2f2f2] rounded-full">✕</button></div>
-            <div className="text-[12px] leading-relaxed text-gray-700 space-y-3 mt-4">
-              <p><b>1. Data We Collect.</b> Name, phone, village, location (latitude, longitude, DIGIPIN), listing photos, and listing details.</p>
-              <p><b>2. Purpose.</b> To display your listing and connect buyers and sellers.</p>
-              <p><b>3. Consent - DPDP Act 2023.</b> By posting, you give free, specific, and informed consent. You can withdraw consent by deleting your listing or contacting timbermartapp@gmail.com.</p>
-              <p><b>4. Data Sharing.</b> Your phone number is shown only on the listing detail page. DIGIPIN is not shown on listing cards. We do not sell your data.</p>
-              <p><b>5. Your Rights.</b> You can access, correct, or delete your data from Profile.</p>
-              <p><b>6. Contact.</b> timbermartapp@gmail.com</p>
-            </div>
-            <button onClick={() => setShowPrivacy(false)} className="w-full bg-black text-white rounded-full py-3 font-bold text-[13px] mt-5">Close</button>
+          {/* ADMIN APPROVAL */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-4">
+            <p className="text-xs font-bold text-yellow-800">
+              Admin approval is required
+            </p>
+            <p className="text-xs text-yellow-700 mt-1">
+              Your listing will be visible after admin approval.
+            </p>
           </div>
+
+          {/* REGISTERED PHONE */}
+          <div className="mb-4">
+            <label className="text-xs font-bold text-gray-700">
+              Registered WhatsApp Number
+            </label>
+
+            <input
+              value={profileLoading ? 'Loading...' : whatsapp}
+              readOnly
+              className={`${inputClass} mt-2 bg-gray-100`}
+            />
+
+            {profileError && (
+              <p className="text-xs text-red-600 mt-1">
+                {profileError}
+              </p>
+            )}
+          </div>
+
+          {/* ROLE */}
+          <label className="text-xs font-bold">Select Role</label>
+
+          <div className="flex gap-2 mt-2">
+            <button
+              type="button"
+              onClick={() => setRole('seller')}
+              className={`flex-1 p-3 rounded-xl border font-bold text-sm ${
+                role === 'seller'
+                  ? 'bg-black text-white'
+                  : 'bg-white text-gray-700'
+              }`}
+            >
+              SELLER
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setRole('buyer')}
+              className={`flex-1 p-3 rounded-xl border font-bold text-sm ${
+                role === 'buyer'
+                  ? 'bg-black text-white'
+                  : 'bg-white text-gray-700'
+              }`}
+            >
+              BUYER
+            </button>
+          </div>
+
+          {/* PRODUCT TYPE */}
+          <div className="flex gap-2 mt-4">
+            <button
+              type="button"
+              onClick={() => setProductType('logs')}
+              className={`flex-1 p-3 rounded-xl border text-sm font-bold ${
+                productType === 'logs'
+                  ? 'bg-amber-100 border-amber-500'
+                  : 'bg-white'
+              }`}
+            >
+              Logs - Round
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setProductType('cut_sizes')}
+              className={`flex-1 p-3 rounded-xl border text-sm font-bold ${
+                productType === 'cut_sizes'
+                  ? 'bg-amber-100 border-amber-500'
+                  : 'bg-white'
+              }`}
+            >
+              Cut Sizes
+            </button>
+          </div>
+
+          {/* TITLE */}
+          <input
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            placeholder="Listing title"
+            className={`${inputClass} mt-4`}
+          />
+
+          {/* SPECIES */}
+          <label className="block text-xs font-bold mt-4 mb-2">
+            Wood Species
+          </label>
+
+          <select
+            value={species}
+            onChange={e => setSpecies(e.target.value)}
+            className={inputClass}
+          >
+            <option value="">Select Wood Species</option>
+
+            {WOOD_CATEGORIES.map(cat => (
+              <optgroup key={cat.category} label={cat.category}>
+                {cat.species.map(item => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+
+          {/* PLYWOOD DETAILS */}
+          {isPlywood && (
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              <select
+                value={plyBrand}
+                onChange={e => setPlyBrand(e.target.value)}
+                className={inputClass}
+              >
+                <option value="">Plywood Brand</option>
+                {PLYWOOD_BRANDS.map(item => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+
+              <select
+                value={plyType}
+                onChange={e => setPlyType(e.target.value)}
+                className={inputClass}
+              >
+                <option value="">Plywood Type</option>
+                {PLYWOOD_TYPES.map(item => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* CUT SIZE */}
+          {productType === 'cut_sizes' && (
+            <select
+              value={cutSize}
+              onChange={e => setCutSize(e.target.value)}
+              className={`${inputClass} mt-4`}
+            >
+              <option value="">Select Cutting Size</option>
+
+              {CUTTING_CATEGORIES.map(cat => (
+                <optgroup key={cat.category} label={cat.category}>
+                  {cat.sizes.map(item => (
+                    <option key={item} value={item}>{item}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          )}
+                    {/* LOGS / PIECES */}
+          <div className="grid grid-cols-2 gap-3 mt-4">
+            <div>
+              <label className="block text-xs font-bold mb-2">
+                Number of Logs
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={logsCount}
+                onChange={e => setLogsCount(e.target.value)}
+                placeholder="Enter logs"
+                className={inputClass}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold mb-2">
+                Number of Pieces
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={pieces}
+                onChange={e => setPieces(e.target.value)}
+                placeholder="Enter pieces"
+                className={inputClass}
+              />
+            </div>
+          </div>
+
+          {/* GIRTH */}
+          <h3 className="font-bold text-sm mt-5 mb-2">Girth Details</h3>
+
+          <select
+            value={girthMode}
+            onChange={e => setGirthMode(e.target.value)}
+            className={inputClass}
+          >
+            <option value="single">Single Girth</option>
+            <option value="range">Girth Range</option>
+            <option value="mixed">Mixed Girths</option>
+          </select>
+
+          {girthMode === 'single' && (
+            <input
+              value={girth}
+              onChange={e => setGirth(e.target.value)}
+              placeholder="Girth in inches"
+              className={`${inputClass} mt-2`}
+            />
+          )}
+
+          {girthMode === 'range' && (
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <input
+                value={girthMin}
+                onChange={e => setGirthMin(e.target.value)}
+                placeholder="Minimum girth"
+                className={inputClass}
+              />
+              <input
+                value={girthMax}
+                onChange={e => setGirthMax(e.target.value)}
+                placeholder="Maximum girth"
+                className={inputClass}
+              />
+            </div>
+          )}
+
+          {girthMode === 'mixed' && (
+            <textarea
+              value={mixedGirths}
+              onChange={e => setMixedGirths(e.target.value)}
+              placeholder="Example: 10, 12, 14, 16 inches"
+              className={`${inputClass} mt-2`}
+            />
+          )}
+
+          {/* LENGTH */}
+          <h3 className="font-bold text-sm mt-5 mb-2">Length Details</h3>
+
+          <select
+            value={lengthMode}
+            onChange={e => setLengthMode(e.target.value)}
+            className={inputClass}
+          >
+            <option value="single">Single Length</option>
+            <option value="range">Length Range</option>
+            <option value="mixed">Mixed Lengths</option>
+          </select>
+
+          {lengthMode === 'single' && (
+            <input
+              value={length}
+              onChange={e => setLength(e.target.value)}
+              placeholder="Length in feet"
+              className={`${inputClass} mt-2`}
+            />
+          )}
+
+          {lengthMode === 'range' && (
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <input
+                value={lengthMin}
+                onChange={e => setLengthMin(e.target.value)}
+                placeholder="Minimum length"
+                className={inputClass}
+              />
+              <input
+                value={lengthMax}
+                onChange={e => setLengthMax(e.target.value)}
+                placeholder="Maximum length"
+                className={inputClass}
+              />
+            </div>
+          )}
+
+          {lengthMode === 'mixed' && (
+            <textarea
+              value={mixedLengths}
+              onChange={e => setMixedLengths(e.target.value)}
+              placeholder="Example: 6, 8, 10, 12 feet"
+              className={`${inputClass} mt-2`}
+            />
+          )}
+
+          {/* WIDTH */}
+          <h3 className="font-bold text-sm mt-5 mb-2">Width Details</h3>
+
+          <select
+            value={widthMode}
+            onChange={e => setWidthMode(e.target.value)}
+            className={inputClass}
+          >
+            <option value="single">Single Width</option>
+            <option value="range">Width Range</option>
+            <option value="mixed">Mixed Widths</option>
+          </select>
+
+          {widthMode === 'single' && (
+            <input
+              value={width}
+              onChange={e => setWidth(e.target.value)}
+              placeholder="Width in inches"
+              className={`${inputClass} mt-2`}
+            />
+          )}
+
+          {widthMode === 'range' && (
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <input
+                value={widthMin}
+                onChange={e => setWidthMin(e.target.value)}
+                placeholder="Minimum width"
+                className={inputClass}
+              />
+              <input
+                value={widthMax}
+                onChange={e => setWidthMax(e.target.value)}
+                placeholder="Maximum width"
+                className={inputClass}
+              />
+            </div>
+          )}
+
+          {widthMode === 'mixed' && (
+            <textarea
+              value={mixedWidths}
+              onChange={e => setMixedWidths(e.target.value)}
+              placeholder="Example: 2, 3, 4 inches"
+              className={`${inputClass} mt-2`}
+            />
+          )}
+
+          {/* THICKNESS */}
+          <h3 className="font-bold text-sm mt-5 mb-2">
+            Thickness Details
+          </h3>
+
+          <select
+            value={thicknessMode}
+            onChange={e => setThicknessMode(e.target.value)}
+            className={inputClass}
+          >
+            <option value="single">Single Thickness</option>
+            <option value="range">Thickness Range</option>
+            <option value="mixed">Mixed Thickness</option>
+          </select>
+
+          {thicknessMode === 'single' && (
+            <input
+              value={thickness}
+              onChange={e => setThickness(e.target.value)}
+              placeholder="Thickness in inches"
+              className={`${inputClass} mt-2`}
+            />
+          )}
+
+          {thicknessMode === 'range' && (
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <input
+                value={thicknessMin}
+                onChange={e => setThicknessMin(e.target.value)}
+                placeholder="Minimum thickness"
+                className={inputClass}
+              />
+              <input
+                value={thicknessMax}
+                onChange={e => setThicknessMax(e.target.value)}
+                placeholder="Maximum thickness"
+                className={inputClass}
+              />
+            </div>
+          )}
+
+          {thicknessMode === 'mixed' && (
+            <textarea
+              value={mixedThickness}
+              onChange={e => setMixedThickness(e.target.value)}
+              placeholder="Enter mixed thicknesses"
+              className={`${inputClass} mt-2`}
+            />
+          )}
+
+          {/* CUT LENGTH */}
+          <h3 className="font-bold text-sm mt-5 mb-2">
+            Cut Length Details
+          </h3>
+
+          <select
+            value={cutLengthMode}
+            onChange={e => setCutLengthMode(e.target.value)}
+            className={inputClass}
+          >
+            <option value="single">Single Cut Length</option>
+            <option value="range">Cut Length Range</option>
+            <option value="mixed">Mixed Cut Lengths</option>
+          </select>
+
+          {cutLengthMode === 'single' && (
+            <input
+              value={cutLength}
+              onChange={e => setCutLength(e.target.value)}
+              placeholder="Cut length in feet"
+              className={`${inputClass} mt-2`}
+            />
+          )}
+
+          {cutLengthMode === 'range' && (
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <input
+                value={cutLengthMin}
+                onChange={e => setCutLengthMin(e.target.value)}
+                placeholder="Minimum cut length"
+                className={inputClass}
+              />
+              <input
+                value={cutLengthMax}
+                onChange={e => setCutLengthMax(e.target.value)}
+                placeholder="Maximum cut length"
+                className={inputClass}
+              />
+            </div>
+          )}
+
+          {cutLengthMode === 'mixed' && (
+            <textarea
+              value={mixedCutLengths}
+              onChange={e => setMixedCutLengths(e.target.value)}
+              placeholder="Enter mixed cut lengths"
+              className={`${inputClass} mt-2`}
+            />
+          )}
+
+          {/* QUANTITY AND PRICE */}
+          <h3 className="font-bold text-sm mt-5 mb-2">
+            Quantity and Price
+          </h3>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold mb-2">
+                CFT
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={cft}
+                onChange={e => setCft(e.target.value)}
+                placeholder="CFT"
+                className={inputClass}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold mb-2">
+                Unit
+              </label>
+              <select
+                value={unitType}
+                onChange={e => setUnitType(e.target.value)}
+                className={inputClass}
+              >
+                <option value="CFT">CFT</option>
+                <option value="Piece">Piece</option>
+                <option value="Ton">Ton</option>
+                <option value="Kg">Kg</option>
+                <option value="Sheet">Sheet</option>
+              </select>
+            </div>
+          </div>
+
+          <label className="block text-xs font-bold mt-3 mb-2">
+            Price per Unit (₹)
+          </label>
+          <input
+            type="number"
+            min="0"
+            value={unitPrice}
+            onChange={e => setUnitPrice(e.target.value)}
+            placeholder="Enter price"
+            className={inputClass}
+          />
+
+          {totalPrice && (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-3 mt-3">
+              <p className="text-xs text-green-700">Estimated Total Price</p>
+              <p className="font-black text-lg text-green-800">
+                ₹{Number(totalPrice).toLocaleString('en-IN')}
+              </p>
+            </div>
+          )}
+
+          {/* URGENCY */}
+          <label className="block text-xs font-bold mt-5 mb-2">
+            Urgency
+          </label>
+          <select
+            value={urgency}
+            onChange={e => setUrgency(e.target.value)}
+            className={inputClass}
+          >
+            <option value="Normal">Normal</option>
+            <option value="Urgent">Urgent</option>
+            <option value="Very Urgent">Very Urgent</option>
+          </select>
+
+          {/* BUYER REQUIREMENT */}
+          {role === 'buyer' && (
+            <div className="mt-4">
+              <label className="block text-xs font-bold mb-2">
+                Requirement Type
+              </label>
+              <select
+                value={requirementType}
+                onChange={e => setRequirementType(e.target.value)}
+                className={inputClass}
+              >
+                <option value="">Select Requirement</option>
+                <option value="Immediate Purchase">Immediate Purchase</option>
+                <option value="Regular Requirement">Regular Requirement</option>
+                <option value="Future Requirement">Future Requirement</option>
+              </select>
+
+              <div className="grid grid-cols-2 gap-2 mt-3">
+                <input
+                  type="number"
+                  value={budgetMin}
+                  onChange={e => setBudgetMin(e.target.value)}
+                  placeholder="Minimum budget ₹"
+                  className={inputClass}
+                />
+                <input
+                  type="number"
+                  value={budgetMax}
+                  onChange={e => setBudgetMax(e.target.value)}
+                  placeholder="Maximum budget ₹"
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* COMPLETE ADDRESS */}
+          <div className="border-t mt-6 pt-5">
+            <h3 className="font-black text-base">Complete Address</h3>
+            <p className="text-xs text-gray-500 mt-1">
+              Enter your timber location details.
+            </p>
+
+            <button
+              type="button"
+              onClick={getLocation}
+              disabled={loading}
+              className="w-full mt-3 p-3 rounded-xl bg-blue-600 text-white font-bold text-sm disabled:opacity-50"
+            >
+              {loading ? 'Getting Location...' : '📍 Get GPS Location'}
+            </button>
+
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              <input
+                value={houseNumber}
+                onChange={e => setHouseNumber(e.target.value)}
+                placeholder="House / Door Number"
+                className={inputClass}
+              />
+              <input
+                value={street}
+                onChange={e => setStreet(e.target.value)}
+                placeholder="Street / Area"
+                className={inputClass}
+              />
+            </div>
+
+            <input
+              value={village}
+              onChange={e => setVillage(e.target.value)}
+              placeholder="Village / Town / City"
+              className={`${inputClass} mt-3`}
+            />
+
+            <input
+              value={mandal}
+              onChange={e => setMandal(e.target.value)}
+              placeholder="Mandal"
+              className={`${inputClass} mt-3`}
+            />
+
+            <input
+              value={district}
+              onChange={e => setDistrict(e.target.value)}
+              placeholder="District"
+              className={`${inputClass} mt-3`}
+            />
+
+            <input
+              value={stateName}
+              onChange={e => setStateName(e.target.value)}
+              placeholder="State"
+              className={`${inputClass} mt-3`}
+            />
+
+            <input
+              value={pincode}
+              onChange={e => setPincode(e.target.value)}
+              placeholder="6-digit PIN Code"
+              maxLength={6}
+              inputMode="numeric"
+              className={`${inputClass} mt-3`}
+            />
+
+            {latitude && longitude && (
+              <div className="bg-blue-50 rounded-xl p-3 mt-3 text-xs">
+                <p>Latitude: {latitude}</p>
+                <p>Longitude: {longitude}</p>
+                <p>DIGIPIN: {digipin}</p>
+              </div>
+            )}
+          </div>
+
+          {/* PHOTOS */}
+          <div className="mt-6">
+            <h3 className="font-bold text-sm mb-2">
+              Upload Timber Photos
+            </h3>
+
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handlePhotoChange}
+              className="w-full border border-gray-300 rounded-xl p-3 text-xs"
+            />
+
+            <p className="text-xs text-gray-500 mt-1">
+              Maximum 3 photos.
+            </p>
+
+            <div className="grid grid-cols-3 gap-2 mt-3">
+              {photos.map((photo, index) => (
+                <div key={`${photo.name}-${index}`} className="relative">
+                  <img
+                    src={URL.createObjectURL(photo)}
+                    alt={`Timber ${index + 1}`}
+                    className="w-full h-24 object-cover rounded-lg"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(index)}
+                    className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 text-xs"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* PRIVACY CONSENT */}
+          <div className="bg-gray-50 border rounded-xl p-3 mt-6">
+            <label className="flex items-start gap-2 text-xs">
+              <input
+                type="checkbox"
+                checked={consent}
+                onChange={e => setConsent(e.target.checked)}
+                className="mt-1"
+              />
+
+              <span>
+                I agree to share my listing details, registered contact
+                number and location with TimberMart for marketplace
+                services. I accept the Privacy Policy.
+              </span>
+            </label>
+          </div>
+
+          {/* SUBMIT */}
+          <button
+            type="button"
+            onClick={handlePublish}
+            disabled={loading || profileLoading || !userId}
+            className="w-full bg-amber-600 hover:bg-amber-700 text-white font-black rounded-xl py-4 mt-6 disabled:opacity-50"
+          >
+            {loading
+              ? 'SUBMITTING...'
+              : profileLoading
+                ? 'LOADING PROFILE...'
+                : 'SUBMIT LISTING'}
+          </button>
+
+          <p className="text-center text-xs text-gray-500 mt-3">
+            Your listing will be submitted for admin approval.
+          </p>
+
         </div>
-      )}
-    </div></div>
+      </div>
+    </div>
   );
 }

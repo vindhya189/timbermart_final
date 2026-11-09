@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
+import TreeLoader from '../components/TreeLoader';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
@@ -160,7 +161,12 @@ export default function SearchPage() {
 
         {/* RESULTS */}
         <div className="p-3">
-          {loading ? <div className="py-10 text-center text-[12px]">Loading...</div> : filtered.length === 0 ? (
+          {loading ? (
+  <TreeLoader
+    message="Finding the best timber for you..."
+    fullScreen={false}
+  />
+) : filtered.length === 0 ? (
             <div className="py-16 text-center">
               <p className="font-bold text-[13px]">No Results - Try Clear Filters</p>
               <button onClick={clearFilters} className="mt-3 bg-black text-white px-5 py-2 rounded-full text-[11px] font-bold">Clear All Filters</button>

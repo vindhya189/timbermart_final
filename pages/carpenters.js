@@ -2,6 +2,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
+import TreeLoader from '../components/TreeLoader';
+
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 // Haversine - Distance in KM
@@ -48,7 +50,12 @@ export default function Carpenters(){
           <select value={sortBy} onChange={e=>setSortBy(e.target.value)} className="border rounded-full px-3 py-2.5 text-[12px] bg-white"><option>Nearest</option><option>Experience</option><option>Low Charge</option></select>
         </div>
         {myLat && <p className="text-[11px] text-green-600 font-bold mt-2">✓ Distance calculated from your location</p>}
-        {loading && <p className="text-center text-gray-500 text-[13px] mt-10">Loading carpenters...</p>}
+        {loading && (
+  <TreeLoader
+    message="Growing TimberMart..."
+    fullScreen={false}
+  />
+)}
         <div className="space-y-3 mt-4">
           {filtered.map(c=>(
             <div key={c.id} className="border rounded-[16px] p-3">

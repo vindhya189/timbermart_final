@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '../lib/supabase';
+import TreeLoader from '../components/TreeLoader';
 
 export default function Login() {
   const router = useRouter();
@@ -396,6 +397,16 @@ const resetPassword = async () => {
       setLoading(false);
     }
   };
+
+
+  if (loading) {
+  return (
+    <TreeLoader
+      message="Growing your TimberMart account..."
+      fullScreen={true}
+    />
+  );
+}
 
   // =====================================
   // PAGE DESIGN
