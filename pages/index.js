@@ -534,7 +534,7 @@ export default function Home() {
             </button>
 
             <Link
-              href="/list-timber"
+              href="/dynamic-listing"
               className="bg-white text-black px-4 py-2 rounded-full text-[12px] font-bold"
             >
               + LIST
@@ -1013,7 +1013,7 @@ export default function Home() {
           </Link>
 
           <Link
-            href="/list-timber"
+            href="/dynamic-listing"
             className="bg-black text-white px-5 py-2 rounded-full text-[12px] font-bold"
           >
             + List Timber

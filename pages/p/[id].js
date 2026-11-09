@@ -17,6 +17,7 @@ export default function ProductPage() {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showRegisterPrompt, setShowRegisterPrompt] = useState(false);
 
   useEffect(() => {
     if (!router.isReady || !id) return;
@@ -133,6 +134,17 @@ View Listing: ${url}`;
       }
     }
   };
+
+  const handleListAnotherTimber = async () => {
+  const { data: { session }, error } = await supabase.auth.getSession();
+
+  if (error || !session) {
+    setShowRegisterPrompt(true);
+    return;
+  }
+
+  router.push('/dynamic-listing');
+};
 
   // PRELOADER
   if (loading) {
@@ -446,12 +458,29 @@ View Listing: ${url}`;
           )}
 
           {/* LIST ANOTHER TIMBER */}
-          <Link
-            href="/list-timber"
-            className="mt-3 w-full border border-black rounded-full py-3.5 font-bold text-[12px] flex items-center justify-center"
-          >
-            + List Another Timber
-          </Link>
+<button
+  type="button"
+  onClick={handleListAnotherTimber}
+  className="mt-3 w-full border border-black rounded-full py-3.5 font-bold text-[12px] flex items-center justify-center"
+>
+  + List Another Timber
+</button>
+
+{showRegisterPrompt && (
+  <div className="mt-3 border border-green-200 bg-green-50 rounded-xl p-3 text-center">
+    <p className="text-[11px] font-semibold text-gray-700">
+      You have to register for adding listings.
+    </p>
+
+    <button
+      type="button"
+      onClick={() => router.push('/login')}
+      className="mt-2 bg-green-700 text-white text-[11px] font-bold px-5 py-2 rounded-full"
+    >
+      Login
+    </button>
+  </div>
+)}
 
         </div>
       </div>

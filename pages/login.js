@@ -416,26 +416,22 @@ const resetPassword = async () => {
       <div className="w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden">
 
         {/* LOGO HEADER */}
-        <div className="bg-[#183D32] text-center px-6 py-7">
-          <div className="w-16 h-16 bg-white rounded-2xl mx-auto flex items-center justify-center mb-3 overflow-hidden">
-            <img
-              src="/logo.png"
-              alt="TimberMart Logo"
-              className="w-full h-full object-contain"
-              onError={e => {
-                e.currentTarget.style.display = 'none';
-              }}
-            />
-          </div>
+        {/* TIMBERMART LOGO HEADER */}
+<div className="bg-white text-center px-6 py-5 border-b border-gray-100">
 
-          <h1 className="text-2xl font-black text-white">
-            TimberMart
-          </h1>
+  <div className="w-full flex justify-center items-center">
+    <img
+      src="/logo.png"
+      alt="TimberMart - Buy Sell Grow Together"
+      className="w-52 h-52 sm:w-60 sm:h-60 object-contain"
+    />
+  </div>
 
-          <p className="text-green-100 text-[10px] tracking-[3px] mt-2">
-            INDIA'S TIMBER MARKETPLACE
-          </p>
-        </div>
+  <p className="text-[#183D32] text-[10px] font-bold tracking-[3px] mt-1">
+    INDIA'S TIMBER MARKETPLACE
+  </p>
+
+</div>
 
         <div className="p-6 sm:p-8">
 
