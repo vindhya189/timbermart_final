@@ -499,169 +499,344 @@ export default function Home() {
   // HOME PAGE UI
   // ==========================================
 
-  return (
-    <div className="min-h-screen bg-white flex justify-center">
-      <div className="w-full max-w-[480px] pb-24 min-h-screen relative">
+    return (
+    <div className="min-h-screen bg-[#f4f7f2] flex justify-center text-[#17251b]">
+      <div className="w-full max-w-[480px] pb-28 min-h-screen relative bg-white shadow-xl overflow-x-hidden">
 
-        {/* HEADER */}
-        <div className="bg-black text-white px-4 py-3 flex justify-between items-center sticky top-0 z-30">
+        {/* PREMIUM GREEN HEADER */}
+        <header className="sticky top-0 z-30 text-white shadow-md bg-gradient-to-r from-[#052d17] via-[#075326] to-[#0b3d20]">
+          <div className="px-4 py-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+  {/* TimberMart Logo */}
+  <img
+    src="logo.png"
+    alt="TimberMart Logo"
+    className="h-14 w-14 object-contain rounded-full"
+  />
 
-          <p className="font-black text-[16px] tracking-wide">
-            TimberMart.co.in
-          </p>
+  {/* Brand Name + Tagline */}
+  <div className="min-w-0">
+    <h1 className="text-2xl font-extrabold tracking-tight text-white leading-tight">
+      Timber<span className="text-[#ffc629]">Mart</span>
+      <span className="text-[10px] align-top">®</span>
+    </h1>
 
-          <div className="flex gap-2 items-center">
+    <p className="text-[10px] sm:text-xs text-green-100 whitespace-nowrap">
+      India's Timber & Wood Marketplace
+    </p>
+  </div>
+</div>
+           
 
-            <Link
-              href="/profile"
-              className="w-9 h-9 bg-white rounded-full flex items-center justify-center text-[16px]"
-            >
-              👤
-            </Link>
+            <div className="flex items-center gap-2 shrink-0">
+              <Link
+                href="/profile"
+                aria-label="My profile"
+                className="w-9 h-9 rounded-full bg-white/15 border border-white/30 flex items-center justify-center text-lg"
+              >
+                👤
+              </Link>
 
-            <button
-              onClick={async () => {
-                const { error } = await supabase.auth.signOut();
+              <button
+                onClick={async () => {
+                  const { error } = await supabase.auth.signOut();
 
-                if (error) {
-                  alert('Logout failed: ' + error.message);
-                  return;
-                }
+                  if (error) {
+                    alert('Logout failed: ' + error.message);
+                    return;
+                  }
 
-                router.replace('/login');
+                  router.replace('/login');
+                }}
+                className="bg-white/10 border border-white/25 text-white px-2.5 py-2 rounded-full text-[10px] font-bold"
+              >
+                Logout
+              </button>
+
+              <Link
+                href="/dynamic-listing"
+                className="bg-[#ffc629] text-[#17220f] px-3 py-2 rounded-full text-[11px] font-black shadow"
+              >
+                + LIST
+              </Link>
+            </div>
+          </div>
+        </header>
+
+        <main className="px-4 pt-4">
+
+          {/* SEARCH */}
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl text-gray-500">
+              ⌕
+            </span>
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search timber, species, village, supplier..."
+              className="w-full bg-[#f5f7f5] border border-[#e2e9e2] rounded-full pl-11 pr-4 py-3.5 text-[13px] outline-none focus:border-[#16803c] focus:ring-2 focus:ring-green-100"
+            />
+          </div>
+
+          {/* CATEGORY STRIP */}
+          <div className="mt-4 grid grid-cols-4 gap-2">
+            {[
+  { label: 'Timber', sub: '(Logs)', icon: '🪵', value: 'Logs' },
+  { label: 'Cut Sizes', sub: '', icon: '🪚', value: 'Cut Sizes' },
+  { label: 'Buyer Needs', sub: '', icon: '📋', value: 'Buyer' },
+  { label: 'Premium', sub: '', icon: '👑', value: 'Premium' }
+].map(item => (
+  <button
+    key={item.value}
+    type="button"
+    onClick={() => {
+      setTab(item.value);
+
+      document.getElementById('latest-listings')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }}
+    className={`min-w-0 rounded-2xl border px-1.5 py-3 flex flex-col items-center justify-center gap-1 transition ${
+      tab === item.value
+        ? 'bg-[#e8f5e9] border-[#16803c] shadow-sm'
+        : 'bg-white border-[#edf0ed]'
+    }`}
+  >
+    <span className="text-[25px] leading-none">{item.icon}</span>
+    <span className="text-[10px] font-extrabold text-center leading-tight">
+      {item.label}
+    </span>
+    {item.sub && (
+      <span className="text-[9px] text-gray-500">{item.sub}</span>
+    )}
+  </button>
+))}
+          </div>
+
+          {/* HERO BANNER */}
+          <Link
+            href="/dynamic-listing"
+            className="block mt-4 rounded-[22px] overflow-hidden relative min-h-[178px] bg-gradient-to-r from-[#052d17] via-[#0b5127] to-[#174b25] shadow-lg"
+          >
+            <div
+              className="absolute inset-0 opacity-20"
+              style={{
+                backgroundImage:
+                  'radial-gradient(circle at 80% 20%, #d7a83d 0, transparent 35%), linear-gradient(135deg, transparent 45%, #071e10 100%)'
               }}
-              className="bg-red-600 text-white px-3 py-2 rounded-full text-[11px] font-bold"
+            />
+            <div className="relative z-10 p-5 pr-28">
+              <p className="text-white text-[22px] leading-[1.12] font-black">
+                Buy & Sell
+              </p>
+              <p className="text-[#ffc629] text-[22px] leading-[1.12] font-black">
+                Quality Timber Online
+              </p>
+              <p className="text-green-50 text-[11px] leading-snug mt-2 max-w-[220px]">
+                Connect with farmers, merchants, sawmills and carpenters.
+              </p>
+              <span className="inline-flex items-center gap-2 mt-4 bg-[#ffc629] text-[#17220f] rounded-full px-4 py-2 text-[11px] font-black">
+                Post Your Requirement <span className="text-base">→</span>
+              </span>
+            </div>
+            <div className="absolute right-2 bottom-3 text-[82px] leading-none drop-shadow-lg">
+              🪵
+            </div>
+            <div className="absolute right-4 top-4 text-[35px] opacity-80">
+              🌲
+            </div>
+          </Link>
+
+          {/* TRUST STRIP */}
+          <div className="grid grid-cols-4 gap-1 py-4 border-b border-[#edf1ed]">
+            {[
+              ['🛡️', 'Verified'],
+              ['📍', 'Nearby Leads'],
+              ['⚡', 'Quick Response'],
+              ['🤝', 'Trusted Network']
+            ].map(([icon, label]) => (
+              <div
+                key={label}
+                className="flex flex-col items-center text-center gap-1"
+              >
+                <span className="text-xl">{icon}</span>
+                <span className="text-[9px] font-bold text-gray-700 leading-tight">
+                  {label}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* QUICK ACTIONS */}
+          <div className="grid grid-cols-2 gap-2.5 mt-4">
+            <Link
+              href="/dynamic-listing"
+              className="rounded-2xl bg-[#e7f5e8] border border-[#d5ead7] p-3 flex items-center gap-2.5 min-h-[76px]"
             >
-              Logout
-            </button>
+              <span className="text-[28px]">🪵</span>
+              <span>
+                <b className="block text-[12px]">+ List Timber</b>
+                <small className="text-[10px] text-gray-600">Sell logs / planks</small>
+              </span>
+            </Link>
 
             <Link
               href="/dynamic-listing"
-              className="bg-white text-black px-4 py-2 rounded-full text-[12px] font-bold"
+              className="rounded-2xl bg-[#fff1df] border border-[#f6e4cc] p-3 flex items-center gap-2.5 min-h-[76px]"
             >
-              + LIST
+              <span className="text-[27px]">📋</span>
+              <span>
+                <b className="block text-[12px]">Post Requirement</b>
+                <small className="text-[10px] text-gray-600">Tell what you need</small>
+              </span>
             </Link>
-
-          </div>
-        </div>
-
-        <div className="px-4 pt-3">
-
-          {/* SEARCH */}
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search species, village..."
-            className="w-full bg-[#f2f2f2] rounded-full px-4 py-3 text-[13px] outline-none"
-          />
-
-          {/* CARPENTER BANNER */}
-          <Link
-            href="/subscription"
-            className="block w-full mt-3 bg-yellow-400 rounded-[16px] p-3 text-center font-bold text-[12px]"
-          >
-            ⭐ Go Premium - ₹99 - →
-          </Link>
-
-          <div className="flex gap-2 mt-3">
 
             <Link
               href="/carpenters"
-              className="flex-1 bg-orange-50 border border-orange-200 rounded-[16px] p-3 flex items-center gap-2"
+              className="rounded-2xl bg-[#e8f1ff] border border-[#d8e6fb] p-3 flex items-center gap-2.5 min-h-[76px]"
             >
-              <span className="text-[24px]">🪚</span>
+              <span className="text-[27px]">🧑‍🔧</span>
+              <span>
+                <b className="block text-[12px]">Find Carpenter</b>
+                <small className="text-[10px] text-gray-600">Nearby services</small>
+              </span>
+            </Link>
 
-              <div>
-                <p className="font-bold text-[12px]">
-                  Find Carpenter Nearby
-                </p>
+            <Link
+              href="/subscription"
+              className="rounded-2xl bg-[#f4eaff] border border-[#e9dcf7] p-3 flex items-center gap-2.5 min-h-[76px]"
+            >
+              <span className="text-[27px]">👑</span>
+              <span>
+                <b className="block text-[12px]">Upgrade Premium</b>
+                <small className="text-[10px] text-gray-600">More visibility</small>
+              </span>
+            </Link>
+          </div>
 
-                <p className="text-[10px] text-gray-500">
-                  Distance in KM • Call Direct
-                </p>
-              </div>
-
-              <span className="ml-auto text-[16px]">→</span>
+          {/* CARPENTER ACTIONS */}
+          <div className="mt-3 flex gap-2">
+            <Link
+              href="/carpenters"
+              className="flex-1 rounded-xl bg-[#f5f8f4] border border-[#e4ebe2] p-3 flex items-center gap-2"
+            >
+              <span className="text-xl">🪚</span>
+              <span className="min-w-0">
+                <b className="block text-[11px]">Find Carpenter Nearby</b>
+                <small className="text-[9px] text-gray-500">
+                  Distance in KM · Call Direct
+                </small>
+              </span>
+              <span className="ml-auto">→</span>
             </Link>
 
             <Link
               href="/register-carpenter"
-              className="bg-black text-white rounded-[16px] px-4 py-2 flex flex-col items-center justify-center"
+              className="rounded-xl bg-[#073b1d] text-white px-4 py-2 flex flex-col justify-center items-center"
             >
-              <span className="text-[16px] leading-none">+</span>
-
-              <span className="text-[10px] font-bold text-center leading-tight">
-                Join as
-                <br />
-                Carpenter
+              <span className="text-lg leading-none">＋</span>
+              <span className="text-[9px] font-bold text-center">
+                Join as<br />Carpenter
               </span>
             </Link>
-
           </div>
 
-          {/* LOCATION + DATE FILTER + SORT */}
-          <div className="flex gap-2 mt-3">
+          {/* LISTINGS HEADING */}
+          <div
+  id="latest-listings"
+  className="flex items-end justify-between mt-6 mb-3 scroll-mt-24"
+>
+            <div>
+              <p className="text-[19px] font-black tracking-tight">
+                Latest Listings
+              </p>
+              <p className="text-[10px] text-gray-500">
+                Explore timber available in the marketplace
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={clearAll}
+              className="text-[11px] font-extrabold text-[#08732f]"
+            >
+              View All →
+            </button>
+          </div>
 
+          {/* LISTING TABS */}
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {['All', 'Logs', 'Cut Sizes', 'Buyer', 'Premium'].map(t => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={`shrink-0 px-4 py-2.5 rounded-full text-[11px] font-extrabold whitespace-nowrap border transition ${
+                  tab === t
+                    ? 'bg-[#075326] text-white border-[#075326] shadow-sm'
+                    : 'bg-[#f6f7f6] text-gray-700 border-[#edf0ed]'
+                }`}
+              >
+                {t === 'Buyer' ? 'Buyer Needs' : t}
+                {t === 'All' ? ` (${filtered.length})` : ''}
+              </button>
+            ))}
+          </div>
+
+          {/* FILTER + SORT */}
+          <div className="flex gap-2 mt-2">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex-1 border rounded-full py-2.5 text-[12px] font-bold ${
+              className={`flex-1 border rounded-full px-3 py-2.5 text-[11px] font-bold text-left ${
                 activeFilterCount > 0
-                  ? 'bg-black text-white border-black'
-                  : 'bg-white'
+                  ? 'bg-[#075326] text-white border-[#075326]'
+                  : 'bg-white border-[#e2e8e2]'
               }`}
             >
               📍 {locFilter === 'All Locations' ? 'Location' : locFilter}
-              {' '}• 🗓️ {dateFilter}
-              {' '}
-              {activeFilterCount > 0
-                ? `(${activeFilterCount})`
-                : ''}
-              {' '}
-              {showFilters ? '▲' : '▼'}
+              {' · '}🗓️ {dateFilter}
+              {activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+              <span className="float-right">
+                {showFilters ? '⌃' : '⌄'}
+              </span>
             </button>
 
             <select
               value={sortBy}
               onChange={e => setSortBy(e.target.value)}
-              className="border rounded-full px-3 py-2.5 text-[12px] bg-white outline-none"
+              className="border border-[#e2e8e2] rounded-full px-3 py-2.5 text-[11px] font-bold bg-white outline-none"
             >
               <option value="Latest">Latest</option>
               <option value="Low Price">Low Price</option>
               <option value="High Price">High Price</option>
               <option value="Most CFT">Most CFT</option>
             </select>
-
           </div>
 
           {/* FILTER PANEL */}
           {showFilters && (
-            <div className="border rounded-[18px] p-4 mt-2 space-y-4 bg-[#fafafa]">
-
+            <div className="border border-[#e3ebe3] rounded-2xl p-4 mt-3 space-y-4 bg-[#f8faf7]">
               <div>
-                <p className="text-[11px] font-bold mb-1.5">
+                <p className="text-[11px] font-extrabold mb-2">
                   📍 Location Search
                 </p>
-
                 <input
                   value={locSearch}
                   onChange={e => setLocSearch(e.target.value)}
                   placeholder="Type village... Example: Anakapalle"
-                  className="w-full border rounded-full px-4 py-2.5 text-[12px] bg-white outline-none"
+                  className="w-full border border-[#dfe7df] rounded-xl px-4 py-3 text-[12px] bg-white outline-none"
                 />
               </div>
 
               <div>
-                <p className="text-[11px] font-bold mb-1.5">
+                <p className="text-[11px] font-extrabold mb-2">
                   Village Filter {visibleVillages.length > 0 && `(${visibleVillages.length})`}
                 </p>
-
                 <div className="flex flex-wrap gap-1.5 max-h-[110px] overflow-y-auto">
-
                   <button
                     onClick={() => setLocFilter('All Locations')}
-                    className={`px-3 py-1.5 rounded-full text-[11px] font-bold ${
+                    className={`px-3 py-1.5 rounded-full text-[10px] font-bold ${
                       locFilter === 'All Locations'
-                        ? 'bg-black text-white'
+                        ? 'bg-[#075326] text-white'
                         : 'bg-white border'
                     }`}
                   >
@@ -672,9 +847,9 @@ export default function Home() {
                     <button
                       key={v}
                       onClick={() => setLocFilter(v)}
-                      className={`px-3 py-1.5 rounded-full text-[11px] font-bold ${
+                      className={`px-3 py-1.5 rounded-full text-[10px] font-bold ${
                         locFilter === v
-                          ? 'bg-black text-white'
+                          ? 'bg-[#075326] text-white'
                           : 'bg-white border'
                       }`}
                     >
@@ -687,23 +862,20 @@ export default function Home() {
                       No village found
                     </p>
                   )}
-
                 </div>
               </div>
 
               {allDistricts.length > 0 && (
                 <div>
-                  <p className="text-[11px] font-bold mb-1.5">
+                  <p className="text-[11px] font-extrabold mb-2">
                     District Filter
                   </p>
-
                   <div className="flex flex-wrap gap-1.5">
-
                     <button
                       onClick={() => setDistrictFilter('All Districts')}
-                      className={`px-3 py-1.5 rounded-full text-[11px] font-bold ${
+                      className={`px-3 py-1.5 rounded-full text-[10px] font-bold ${
                         districtFilter === 'All Districts'
-                          ? 'bg-black text-white'
+                          ? 'bg-[#075326] text-white'
                           : 'bg-white border'
                       }`}
                     >
@@ -714,209 +886,149 @@ export default function Home() {
                       <button
                         key={d}
                         onClick={() => setDistrictFilter(d)}
-                        className={`px-3 py-1.5 rounded-full text-[11px] font-bold ${
+                        className={`px-3 py-1.5 rounded-full text-[10px] font-bold ${
                           districtFilter === d
-                            ? 'bg-black text-white'
+                            ? 'bg-[#075326] text-white'
                             : 'bg-white border'
                         }`}
                       >
                         {d}
                       </button>
                     ))}
-
                   </div>
                 </div>
               )}
 
               <div>
-                <p className="text-[11px] font-bold mb-1.5">
-                  Date Filter
-                </p>
-
-                <div className="grid grid-cols-5 gap-1.5">
-
-                  {[
-                    'All Time',
-                    'Today',
-                    'Yesterday',
-                    'This Week',
-                    'This Month'
-                  ].map(d => (
+                <p className="text-[11px] font-extrabold mb-2">Date Filter</p>
+                <div className="grid grid-cols-5 gap-1">
+                  {['All Time', 'Today', 'Yesterday', 'This Week', 'This Month'].map(d => (
                     <button
                       key={d}
                       onClick={() => setDateFilter(d)}
-                      className={`py-2 rounded-full text-[11px] font-bold ${
+                      className={`py-2 rounded-lg text-[9px] font-bold ${
                         dateFilter === d
-                          ? 'bg-black text-white'
+                          ? 'bg-[#075326] text-white'
                           : 'bg-white border'
                       }`}
                     >
                       {d}
                     </button>
                   ))}
-
                 </div>
               </div>
 
               <div>
-                <p className="text-[11px] font-bold mb-1.5">
+                <p className="text-[11px] font-extrabold mb-2">
                   Price Filter - Per CFT
                 </p>
-
                 <div className="flex gap-2">
-
                   <input
                     value={priceMin}
                     onChange={e => setPriceMin(e.target.value)}
                     type="number"
                     placeholder="Min ₹"
-                    className="flex-1 border rounded-full px-4 py-2.5 text-[12px] bg-white outline-none"
+                    className="w-1/2 border rounded-xl px-3 py-2.5 text-[12px] bg-white outline-none"
                   />
-
                   <input
                     value={priceMax}
                     onChange={e => setPriceMax(e.target.value)}
                     type="number"
                     placeholder="Max ₹"
-                    className="flex-1 border rounded-full px-4 py-2.5 text-[12px] bg-white outline-none"
+                    className="w-1/2 border rounded-xl px-3 py-2.5 text-[12px] bg-white outline-none"
                   />
-
                 </div>
               </div>
 
               <button
                 onClick={clearAll}
-                className="w-full text-[11px] text-gray-500 underline"
+                className="w-full text-[11px] font-bold text-[#08732f] py-2"
               >
                 Clear All Filters
               </button>
-
             </div>
           )}
 
-          {/* TABS */}
-          <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
-
-            {['All', 'Logs', 'Cut Sizes', 'Buyer', 'Premium'].map(t => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`px-4 py-2 rounded-full text-[12px] font-bold whitespace-nowrap ${
-                  tab === t
-                    ? 'bg-black text-white'
-                    : 'bg-[#f2f2f2]'
-                }`}
-              >
-                {t} {t === 'All' ? `(${filtered.length})` : ''}
-              </button>
-            ))}
-
-          </div>
-
-          {/* ACTIVE FILTERS */}
-          {(
-            locFilter !== 'All Locations' ||
+          {/* ACTIVE FILTER CHIPS */}
+          {(locFilter !== 'All Locations' ||
             dateFilter !== 'All Time' ||
-            districtFilter !== 'All Districts'
-          ) && (
-            <div className="flex gap-1.5 mt-2 flex-wrap">
-
+            districtFilter !== 'All Districts') && (
+            <div className="flex gap-1.5 mt-3 flex-wrap">
               {locFilter !== 'All Locations' && (
                 <button
                   onClick={() => setLocFilter('All Locations')}
-                  className="bg-black text-white px-3 py-1 rounded-full text-[10px] font-bold"
+                  className="bg-[#e8f5e9] text-[#075326] px-3 py-1 rounded-full text-[10px] font-bold"
                 >
-                  📍 {locFilter} ✕
+                  📍 {locFilter} ×
                 </button>
               )}
 
               {districtFilter !== 'All Districts' && (
                 <button
                   onClick={() => setDistrictFilter('All Districts')}
-                  className="bg-black text-white px-3 py-1 rounded-full text-[10px] font-bold"
+                  className="bg-[#e8f5e9] text-[#075326] px-3 py-1 rounded-full text-[10px] font-bold"
                 >
-                  📍 {districtFilter} ✕
+                  {districtFilter} ×
                 </button>
               )}
 
               {dateFilter !== 'All Time' && (
                 <button
                   onClick={() => setDateFilter('All Time')}
-                  className="bg-black text-white px-3 py-1 rounded-full text-[10px] font-bold"
+                  className="bg-[#e8f5e9] text-[#075326] px-3 py-1 rounded-full text-[10px] font-bold"
                 >
-                  🗓️ {dateFilter} ✕
+                  🗓️ {dateFilter} ×
                 </button>
               )}
-
             </div>
           )}
 
           {loading && (
-  <TreeLoader
-    message="Growing TimberMart..."
-    fullScreen={false}
-  />
-)}
+            <div className="py-5">
+              <TreeLoader message="Growing TimberMart..." fullScreen={false} />
+            </div>
+          )}
 
-          {/* LISTING CARDS - SELL VS BUYING */}
+          {/* LISTING CARDS */}
           <div className="grid grid-cols-2 gap-3 mt-4">
-
             {filtered.map(l => (
               <Link
                 key={l.listing_id}
                 href={`/p/${l.listing_id}`}
-                className="block"
+                className="block min-w-0 rounded-2xl overflow-hidden border border-[#e8ece8] bg-white shadow-[0_3px_12px_rgba(0,0,0,0.07)]"
               >
-                <div
-                  className={`relative rounded-[16px] overflow-hidden bg-gray-100 aspect-[4/3] ${
-                    l.user_role === 'buyer'
-                      ? 'ring-2 ring-blue-600'
-                      : ''
-                  }`}
-                >
-
+                <div className={`relative aspect-[4/3] overflow-hidden bg-gray-100 ${
+                  l.user_role === 'buyer'
+                    ? 'ring-2 ring-inset ring-blue-500'
+                    : ''
+                }`}>
                   <img
-                    src={
-                      l.listing_images?.[0]?.image_url ||
-                      '/placeholder.jpg'
-                    }
+                    src={l.listing_images?.[0]?.image_url || '/placeholder.jpg'}
                     alt={l.title}
                     className="w-full h-full object-cover"
                   />
 
-                  {/* SELL / BUYING BADGE */}
                   {l.user_role === 'buyer' ? (
-                    <span className="absolute top-2 left-2 bg-blue-600 text-white px-2 py-1 rounded-full text-[9px] font-black tracking-wide shadow">
+                    <span className="absolute top-2 left-2 bg-blue-600 text-white px-2 py-1 rounded-full text-[9px] font-black shadow">
                       BUYING
                     </span>
                   ) : (
-                    <span className="absolute top-2 left-2 bg-green-600 text-white px-2 py-1 rounded-full text-[9px] font-black tracking-wide shadow">
-                      SELL
+                    <span className="absolute top-2 left-2 bg-[#07852f] text-white px-2 py-1 rounded-full text-[9px] font-black shadow">
+                      FOR SALE
                     </span>
                   )}
 
-                  <span className="absolute bottom-2 right-2 bg-white px-2 py-0.5 rounded-full text-[10px] font-bold shadow">
-                    {l.cft ? `${l.cft} CFT` : 'LOGS'}
-                  </span>
-
                   {l.is_premium && (
-                    <span className="absolute top-2 right-2 bg-[#FFD700] px-2 py-0.5 rounded-full text-[9px] font-black">
+                    <span className="absolute top-2 right-2 bg-[#ffc629] text-[#332600] px-2 py-1 rounded-full text-[8px] font-black">
                       PREMIUM
                     </span>
                   )}
 
-                  {l.is_verified && (
-                    <span className="absolute bottom-2 left-2 bg-green-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px]">
-                      ✓
-                    </span>
-                  )}
-
-                  {/* SUPABASE FAVORITE BUTTON */}
                   <button
                     type="button"
                     onClick={(e) => toggleFav(e, l)}
                     disabled={favoriteLoading === String(l.listing_id)}
-                    className="absolute bottom-8 left-2 w-7 h-7 bg-white rounded-full flex items-center justify-center text-[13px] shadow disabled:opacity-60"
+                    className="absolute bottom-2 right-2 w-8 h-8 bg-white/95 rounded-full flex items-center justify-center text-base shadow"
                     aria-label={
                       favs.includes(String(l.listing_id))
                         ? 'Remove from favorites'
@@ -930,151 +1042,130 @@ export default function Home() {
                         : '🤍'}
                   </button>
 
+                  {l.cft && (
+                    <span className="absolute bottom-2 left-2 bg-white/95 text-[#243329] px-2 py-1 rounded-full text-[9px] font-extrabold">
+                      {l.cft} CFT
+                    </span>
+                  )}
                 </div>
 
-                {/* SELL / BUYING TEXT BADGE */}
-                {l.user_role === 'buyer' ? (
-                  <span className="inline-block bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-[9px] font-black mt-2">
-                    BUYING - WANTS TO BUY
-                  </span>
-                ) : (
-                  <span className="inline-block bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-[9px] font-black mt-2">
-                    SELL - FOR SALE
-                  </span>
-                )}
-
-                <p className="font-bold text-[12px] mt-1 leading-tight line-clamp-2">
-                  {l.title?.slice(0, 38)}
-                </p>
-
-                <p className="text-[10px] text-gray-500 mt-0.5">
-                  📍 {l.location_village || 'Anakapalle'}
-                  {' • '}
-                  {getTimeAgo(l.created_at)}
-                </p>
-
-                <p className="text-[10px] text-gray-400">
-                  {formatDateTime(l.created_at)}
-                </p>
-
-                <p className="font-black text-[12px] mt-1">
-                  ₹{l.unit_price}/{l.unit_type}
-                  {' '}
-                  {l.total_price ? `• ₹${l.total_price}` : ''}
-                </p>
-
-                {l.product_type === 'cut_sizes' && l.cut_size && (
-                  <p className="text-[10px] text-gray-500 mt-0.5">
-                    🪚 {l.cut_size}
+                <div className="p-2.5">
+                  <p className="font-black text-[11px] leading-snug line-clamp-2 min-h-[30px]">
+                    {l.title?.slice(0, 38)}
                   </p>
-                )}
-
-                <p className="text-[9px] text-green-600 font-bold mt-0.5">
-                  ✓ Admin Verified
-                </p>
-
+                  <p className="text-[9px] text-gray-500 mt-1 truncate">
+                    📍 {l.location_village || 'Anakapalle'} · {getTimeAgo(l.created_at)}
+                  </p>
+                  <p className="text-[9px] text-gray-400 mt-0.5">
+                    {formatDateTime(l.created_at)}
+                  </p>
+                  <p className="font-black text-[12px] text-[#9c241c] mt-2">
+                    ₹{l.unit_price}/{l.unit_type}
+                  </p>
+                  {l.total_price && (
+                    <p className="text-[9px] text-gray-600">
+                      Total ₹{l.total_price}
+                    </p>
+                  )}
+                  {l.product_type === 'cut_sizes' && l.cut_size && (
+                    <p className="text-[9px] text-gray-500 mt-1 line-clamp-1">
+                      🪚 {l.cut_size}
+                    </p>
+                  )}
+                  <p className="text-[9px] text-[#08732f] font-extrabold mt-2">
+                    ✓ Admin Verified
+                  </p>
+                </div>
               </Link>
             ))}
-
           </div>
 
           {!loading && filtered.length === 0 && (
-            <div className="text-center mt-12">
-
-              <p className="text-[32px]">🪵</p>
-
-              <p className="text-gray-500 text-[13px] mt-2">
+            <div className="text-center mt-12 mb-8 rounded-2xl bg-[#f7faf6] p-7">
+              <p className="text-[36px]">🪵</p>
+              <p className="text-gray-700 text-[13px] font-bold mt-2">
                 No approved listings for this filter
               </p>
-
               <p className="text-gray-400 text-[11px] mt-1">
                 Pending listings will appear after admin approval
               </p>
-
               <button
                 onClick={clearAll}
-                className="mt-3 bg-black text-white px-5 py-2.5 rounded-full text-[12px] font-bold"
+                className="mt-4 bg-[#075326] text-white px-5 py-2.5 rounded-full text-[11px] font-bold"
               >
                 Clear Filters
               </button>
+            </div>
+          )}
+        </main>
 
+        {/* FLOATING WHATSAPP SUPPORT - UNCHANGED */}
+        <div className="fixed bottom-24 right-4 z-50">
+          {showWhatsAppMenu && (
+            <div className="mb-3 w-60 bg-white rounded-2xl shadow-2xl border p-3">
+              <p className="font-black text-sm text-gray-800">
+                TimberMart Support 👋
+              </p>
+              <p className="text-[10px] text-gray-500 mt-1 mb-3">
+                How can we help you?
+              </p>
+
+              <a
+                href="https://wa.me/918985364488?text=Hi%20TimberMart%2C%20I%20have%20an%20enquiry."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block bg-green-50 rounded-xl p-3 mb-2"
+              >
+                <p className="text-xs font-bold text-green-800">
+                  💬 More Enquiries
+                </p>
+                <p className="text-[10px] text-gray-500">
+                  Ask about TimberMart services
+                </p>
+              </a>
+
+              <a
+                href="https://wa.me/918985364488?text=Hi%20TimberMart%2C%20I%20want%20to%20share%20feedback."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block bg-green-50 rounded-xl p-3 mb-2"
+              >
+                <p className="text-xs font-bold text-green-800">
+                  ⭐ Feedback
+                </p>
+                <p className="text-[10px] text-gray-500">
+                  Share your suggestions
+                </p>
+              </a>
+
+              <a
+                href="https://wa.me/918985364488?text=Hi%20TimberMart%2C%20I%20need%20customer%20support."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block bg-green-50 rounded-xl p-3"
+              >
+                <p className="text-xs font-bold text-green-800">
+                  🎧 Customer Support
+                </p>
+                <p className="text-[10px] text-gray-500">
+                  Get help with any issue
+                </p>
+              </a>
             </div>
           )}
 
+          <button
+            type="button"
+            onClick={() => setShowWhatsAppMenu(prev => !prev)}
+            className="ml-auto w-14 h-14 rounded-full bg-[#25D366] text-white shadow-xl flex items-center justify-center text-3xl border-2 border-white"
+            aria-label="WhatsApp Support"
+          >
+            {showWhatsAppMenu ? '✕' : '☏'}
+          </button>
         </div>
-        {/* FLOATING WHATSAPP SUPPORT */}
-<div className="fixed bottom-24 right-4 z-50">
 
-  {showWhatsAppMenu && (
-    <div className="mb-3 w-60 bg-white rounded-2xl shadow-2xl border p-3">
-
-      <p className="font-black text-sm text-gray-800">
-        TimberMart Support 👋
-      </p>
-
-      <p className="text-[10px] text-gray-500 mt-1 mb-3">
-        How can we help you?
-      </p>
-
-      <a
-        href="https://wa.me/918985364488?text=Hi%20TimberMart%2C%20I%20have%20an%20enquiry."
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block bg-green-50 rounded-xl p-3 mb-2"
-      >
-        <p className="text-xs font-bold text-green-800">
-          💬 More Enquiries
-        </p>
-        <p className="text-[10px] text-gray-500">
-          Ask about TimberMart services
-        </p>
-      </a>
-
-      <a
-        href="https://wa.me/918985364488?text=Hi%20TimberMart%2C%20I%20want%20to%20share%20feedback."
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block bg-green-50 rounded-xl p-3 mb-2"
-      >
-        <p className="text-xs font-bold text-green-800">
-          ⭐ Feedback
-        </p>
-        <p className="text-[10px] text-gray-500">
-          Share your suggestions
-        </p>
-      </a>
-
-      <a
-        href="https://wa.me/918985364488?text=Hi%20TimberMart%2C%20I%20need%20customer%20support."
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block bg-green-50 rounded-xl p-3"
-      >
-        <p className="text-xs font-bold text-green-800">
-          🎧 Customer Support
-        </p>
-        <p className="text-[10px] text-gray-500">
-          Get help with any issue
-        </p>
-      </a>
-
-    </div>
-  )}
-
-  <button
-    type="button"
-    onClick={() => setShowWhatsAppMenu(prev => !prev)}
-    className="ml-auto w-14 h-14 rounded-full bg-[#25D366] text-white shadow-xl flex items-center justify-center text-3xl border-2 border-white"
-    aria-label="WhatsApp Support"
-  >
-    {showWhatsAppMenu ? '✕' : '☏'}
-  </button>
-
-</div>
-
-        {/* BOTTOM BAR */}
+        {/* BOTTOM NAVIGATION - UNCHANGED */}
         <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t px-4 py-3 flex justify-between items-center z-30">
-
           <Link href="/" className="text-[12px] font-black">
             Home
           </Link>
@@ -1093,10 +1184,10 @@ export default function Home() {
           <Link href="/profile" className="text-[12px] font-bold">
             Profile
           </Link>
-
         </div>
 
       </div>
     </div>
   );
 }
+
