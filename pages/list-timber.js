@@ -58,6 +58,7 @@ export default function ListTimber() {
   const [district, setDistrict] = useState('');
   const [stateName, setStateName] = useState('Andhra Pradesh');
   const [pincode, setPincode] = useState('');
+  const [city, setCity] = useState('');
 
   // Authenticated user profile
   const [userId, setUserId] = useState('');
@@ -361,17 +362,13 @@ useEffect(() => {
     }
 
     if (
-      !houseNumber.trim() ||
-      !street.trim() ||
-      !village.trim() ||
-      !mandal.trim() ||
-      !district.trim() ||
-      !stateName.trim() ||
-      !/^\d{6}$/.test(pincode)
-    ) {
-      alert('Please enter complete address and valid 6-digit PIN code.');
-      return;
-    }
+  !village.trim() ||
+  !city.trim() ||
+  !district.trim()
+) {
+  alert('Please enter Village, City and District.');
+  return;
+}
 
     if (!species || !unitPrice || Number(unitPrice) <= 0) {
       alert('Please select wood species and enter a valid price.');
@@ -466,8 +463,10 @@ const registeredPhone = String(profile.phone).trim();
 
         
         
-        location_pincode: pincode.trim(),
-        full_address: fullAddress,
+        llocation_village: village.trim(),
+location_city: city.trim(),
+location_district: district.trim(),
+full_address: [village, city, district].filter(Boolean).join(', '),
 
         whatsapp_number: registeredPhone,
         user_id: profile.id,
@@ -1172,18 +1171,27 @@ const registeredPhone = String(profile.phone).trim();
             </div>
 
             <input
-              value={village}
-              onChange={e => setVillage(e.target.value)}
-              placeholder="Village / Town / City"
-              className={`${inputClass} mt-3`}
-            />
+  value={village}
+  onChange={e => setVillage(e.target.value)}
+  placeholder="Village"
+  className={inputClass}
+/>
 
-            <input
-              value={mandal}
-              onChange={e => setMandal(e.target.value)}
-              placeholder="Mandal"
-              className={`${inputClass} mt-3`}
-            />
+<input
+  value={city}
+  onChange={e => setCity(e.target.value)}
+  placeholder="City"
+  className={inputClass}
+/>
+
+<input
+  value={district}
+  onChange={e => setDistrict(e.target.value)}
+  placeholder="District"
+  className={inputClass}
+/>
+
+            
 
             <input
               value={district}
