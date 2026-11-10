@@ -41,7 +41,7 @@ const PLANS = {
     type: 'subscription'
   },
 
-  // NEW PREMIUM PROMOTION PLANS
+  // EXISTING PREMIUM PROMOTION PLANS
   local_top: {
     amount: 199,
     type: 'listing_promotion',
@@ -67,6 +67,18 @@ const PLANS = {
     amount: 4999,
     type: 'listing_promotion',
     scope: 'india'
+  },
+
+  // NEW ANNOUNCEMENT PLANS
+  announcement_7: {
+    amount: 149,
+    type: 'announcement',
+    validity: 7
+  },
+  announcement_14: {
+    amount: 249,
+    type: 'announcement',
+    validity: 14
   }
 };
 
@@ -86,12 +98,16 @@ export default async function handler(req, res) {
       razorpay_signature,
       phone,
       plan,
-      listing_id
+      listing_id,
+      announcement_id
     } = req.body || {};
 
     const cleanPhone = String(phone || '').replace(/\D/g, '');
     const cleanListingId = String(listing_id || '').trim();
-    const selectedPlan = PLANS[String(plan || '').trim()];
+    const cleanPlan = String(plan || '').trim();
+    const cleanAnnouncementId = String(announcement_id || '').trim();
+
+    const selectedPlan = PLANS[cleanPlan];
 
     if (!selectedPlan) {
       return res.status(400).json({
@@ -125,6 +141,16 @@ export default async function handler(req, res) {
       return res.status(400).json({
         success: false,
         error: 'Please select your listing first'
+      });
+    }
+
+    if (
+      selectedPlan.type === 'announcement' &&
+      !cleanAnnouncementId
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: 'Announcement ID missing'
       });
     }
 
@@ -170,7 +196,7 @@ export default async function handler(req, res) {
       payment.amount !== selectedPlan.amount * 100 ||
       order.currency !== 'INR' ||
       payment.currency !== 'INR' ||
-      order.notes?.plan !== plan ||
+      order.notes?.plan !== cleanPlan ||
       order.notes?.phone !== cleanPhone
     ) {
       return res.status(400).json({
@@ -179,7 +205,191 @@ export default async function handler(req, res) {
       });
     }
 
-    // 4. VERIFY LISTING ID IN RAZORPAY ORDER
+    // 4. FIND SELLER PROFILE
+    const { data: seller, error: sellerError } = await supabase
+      .from('users_profile')
+      .select('id, phone')
+      .eq('phone', cleanPhone)
+      .maybeSingle();
+
+    if (sellerError) throw sellerError;
+
+    if (!seller) {
+      return res.status(404).json({
+        success: false,
+        error: 'Seller profile not found'
+      });
+    }
+
+    // 5. ANNOUNCEMENT PAYMENT VERIFICATION
+    // Separate flow. Does not touch existing payments/subscriptions.
+
+    if (selectedPlan.type === 'announcement') {
+
+      // VERIFY ANNOUNCEMENT ID IN RAZORPAY ORDER
+      if (
+        order.notes?.announcement_id !== cleanAnnouncementId
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: 'Announcement ID does not match payment order'
+        });
+      }
+
+      // FIND ANNOUNCEMENT
+      const { data: announcement, error: announcementError } =
+        await supabase
+          .from('announcements')
+          .select('*')
+          .eq('id', cleanAnnouncementId)
+          .eq('created_by', seller.id)
+          .maybeSingle();
+
+      if (announcementError) throw announcementError;
+
+      if (!announcement) {
+        return res.status(404).json({
+          success: false,
+          error: 'Announcement not found or does not belong to this user'
+        });
+      }
+
+      // VERIFY ANNOUNCEMENT DETAILS
+      if (
+        announcement.announcement_type !== 'paid' ||
+        announcement.is_admin_announcement !== false ||
+        Number(announcement.amount) !== selectedPlan.amount ||
+        Number(announcement.package_days) !== selectedPlan.validity
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: 'Announcement details do not match selected plan'
+        });
+      }
+
+      // FIND PAYMENT RECORD
+      const { data: announcementPayment, error: announcementPaymentError } =
+        await supabase
+          .from('announcement_payments')
+          .select('*')
+          .eq('announcement_id', cleanAnnouncementId)
+          .eq('user_id', seller.id)
+          .eq('razorpay_order_id', razorpay_order_id)
+          .maybeSingle();
+
+      if (announcementPaymentError) throw announcementPaymentError;
+
+      if (!announcementPayment) {
+        return res.status(404).json({
+          success: false,
+          error: 'Announcement payment record not found'
+        });
+      }
+
+      if (
+        Number(announcementPayment.amount) !== selectedPlan.amount
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: 'Announcement payment amount mismatch'
+        });
+      }
+
+      // DUPLICATE CALLBACK / RETRY HANDLING
+      if (announcementPayment.payment_status === 'paid') {
+
+        if (
+          announcementPayment.razorpay_payment_id !== razorpay_payment_id
+        ) {
+          return res.status(409).json({
+            success: false,
+            error: 'A different payment is already recorded for this order'
+          });
+        }
+
+        // Recover announcement status if previous update was interrupted
+        if (announcement.status === 'pending_payment') {
+          const { error: recoveryError } = await supabase
+            .from('announcements')
+            .update({
+              status: 'pending_approval'
+            })
+            .eq('id', cleanAnnouncementId)
+            .eq('created_by', seller.id);
+
+          if (recoveryError) throw recoveryError;
+        }
+
+        return res.status(200).json({
+          success: true,
+          message: 'Announcement payment already verified. Waiting for admin approval.',
+          announcement_id: cleanAnnouncementId
+        });
+      }
+
+      if (
+        announcementPayment.payment_status !== 'created' ||
+        announcement.status !== 'pending_payment'
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: 'Announcement payment cannot be processed in its current status'
+        });
+      }
+
+      // SAVE VERIFIED ANNOUNCEMENT PAYMENT
+      const { data: updatedPayment, error: savePaymentError } =
+        await supabase
+          .from('announcement_payments')
+          .update({
+            razorpay_payment_id,
+            razorpay_signature,
+            payment_status: 'paid',
+            verified_at: new Date().toISOString()
+          })
+          .eq('id', announcementPayment.id)
+          .eq('payment_status', 'created')
+          .select('id')
+          .maybeSingle();
+
+      if (savePaymentError) throw savePaymentError;
+
+      if (!updatedPayment) {
+        return res.status(409).json({
+          success: false,
+          error: 'Payment is already being processed'
+        });
+      }
+
+      // MARK ANNOUNCEMENT AS WAITING FOR ADMIN APPROVAL
+      const { data: updatedAnnouncement, error: updateAnnouncementError } =
+        await supabase
+          .from('announcements')
+          .update({
+            status: 'pending_approval'
+          })
+          .eq('id', cleanAnnouncementId)
+          .eq('created_by', seller.id)
+          .eq('status', 'pending_payment')
+          .select('id')
+          .maybeSingle();
+
+      if (updateAnnouncementError) throw updateAnnouncementError;
+
+      if (!updatedAnnouncement) {
+        throw new Error(
+          'Payment verified but announcement status update failed. Retry verification.'
+        );
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Announcement payment verified. Waiting for admin approval.',
+        announcement_id: cleanAnnouncementId
+      });
+    }
+
+    // 6. VERIFY LISTING ID IN RAZORPAY ORDER
     if (
       selectedPlan.type === 'listing_promotion' &&
       order.notes?.listing_id !== cleanListingId
@@ -190,7 +400,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 5. CHECK DUPLICATE PAYMENT
+    // 7. CHECK DUPLICATE EXISTING PAYMENT
     const { data: existingPayment, error: duplicateError } =
       await supabase
         .from('payments')
@@ -207,23 +417,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 6. FIND SELLER PROFILE
-    const { data: seller, error: sellerError } = await supabase
-      .from('users_profile')
-      .select('id, phone')
-      .eq('phone', cleanPhone)
-      .maybeSingle();
-
-    if (sellerError) throw sellerError;
-
-    if (!seller) {
-      return res.status(404).json({
-        success: false,
-        error: 'Seller profile not found'
-      });
-    }
-
-    // 7. VERIFY LISTING OWNERSHIP FOR PROMOTION
+    // 8. VERIFY LISTING OWNERSHIP FOR PROMOTION
     let listing = null;
 
     if (selectedPlan.type === 'listing_promotion') {
@@ -255,7 +449,7 @@ export default async function handler(req, res) {
       listing = data;
     }
 
-    // 8. PREPARE PAYMENT RECORD
+    // 9. PREPARE EXISTING PAYMENT RECORD
     const { error: paymentSaveError } = await supabase
       .from('payments')
       .insert({
@@ -266,13 +460,13 @@ export default async function handler(req, res) {
         order_id: razorpay_order_id,
         payment_id: razorpay_payment_id,
         amount: selectedPlan.amount,
-        plan,
+        plan: cleanPlan,
         status: 'success'
       });
 
     if (paymentSaveError) throw paymentSaveError;
 
-    // 9. ACTIVATE NEW 14-DAY PREMIUM PROMOTION
+    // 10. ACTIVATE EXISTING 14-DAY PREMIUM PROMOTION
     if (selectedPlan.type === 'listing_promotion') {
       const startedAt = new Date();
 
@@ -285,7 +479,7 @@ export default async function handler(req, res) {
         .insert({
           listing_id: cleanListingId,
           seller_id: seller.id,
-          plan_id: plan,
+          plan_id: cleanPlan,
           amount: selectedPlan.amount,
           payment_id: razorpay_payment_id,
           order_id: razorpay_order_id,
@@ -316,11 +510,11 @@ export default async function handler(req, res) {
       });
     }
 
-    // 10. EXISTING SUBSCRIPTION LOGIC - PRESERVED
+    // 11. EXISTING SUBSCRIPTION LOGIC - PRESERVED
     const endDate = new Date();
     endDate.setDate(endDate.getDate() + 30);
 
-    if (plan === 'Premium Listing' || plan === 'premium') {
+    if (cleanPlan === 'Premium Listing' || cleanPlan === 'premium') {
       if (cleanListingId) {
         const { error } = await supabase
           .from('listings')
@@ -335,7 +529,7 @@ export default async function handler(req, res) {
       }
     }
 
-    if (plan === 'Carpenter Pro' || plan === 'carpenter') {
+    if (cleanPlan === 'Carpenter Pro' || cleanPlan === 'carpenter') {
       const { error } = await supabase
         .from('carpenters')
         .update({
@@ -347,12 +541,12 @@ export default async function handler(req, res) {
       if (error) throw error;
     }
 
-    // 11. SAVE EXISTING SUBSCRIPTION
+    // 12. SAVE EXISTING SUBSCRIPTION
     const { error: subscriptionError } = await supabase
       .from('subscriptions')
       .insert({
         phone: cleanPhone,
-        plan_type: plan,
+        plan_type: cleanPlan,
         status: 'active',
         start_date: new Date().toISOString(),
         end_date: endDate.toISOString()

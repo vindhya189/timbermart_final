@@ -1,5 +1,17 @@
 
 import Razorpay from 'razorpay';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false
+    }
+  }
+);
 
 const PLANS = {
   // EXISTING SUBSCRIPTION PLANS
@@ -28,7 +40,7 @@ const PLANS = {
     type: 'subscription'
   },
 
-  // NEW PREMIUM LISTING PROMOTION PLANS
+  // EXISTING PREMIUM LISTING PROMOTION PLANS
   local_top: {
     amount: 199,
     type: 'listing_promotion',
@@ -59,6 +71,18 @@ const PLANS = {
     type: 'listing_promotion',
     scope: 'india',
     validity: 14
+  },
+
+  // NEW ANNOUNCEMENT PLANS
+  announcement_7: {
+    amount: 149,
+    type: 'announcement',
+    validity: 7
+  },
+  announcement_14: {
+    amount: 249,
+    type: 'announcement',
+    validity: 14
   }
 };
 
@@ -88,7 +112,13 @@ export default async function handler(req, res) {
       plan,
       phone,
       listingId,
-      listing_id
+      listing_id,
+      title,
+      description,
+      image_url,
+      contact_number,
+      website_url,
+      target_audience
     } = req.body || {};
 
     const cleanPlan = String(plan || '').trim();
@@ -117,7 +147,7 @@ export default async function handler(req, res) {
       listingId || listing_id || ''
     ).trim();
 
-    // PROMOTION REQUIRES EXISTING LISTING
+    // EXISTING LISTING PROMOTION VALIDATION
     if (
       selectedPlan.type === 'listing_promotion' &&
       !cleanListingId
@@ -128,13 +158,99 @@ export default async function handler(req, res) {
       });
     }
 
+    // ANNOUNCEMENT DETAILS
+    let announcement = null;
+
+    if (selectedPlan.type === 'announcement') {
+      const audiences = [
+        'all',
+        'farmers',
+        'merchants',
+        'sawmills',
+        'carpenters'
+      ];
+
+      if (
+        !title?.trim() ||
+        !description?.trim() ||
+        !image_url ||
+        !contact_number?.trim() ||
+        !audiences.includes(target_audience)
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: 'Please provide all required announcement details'
+        });
+      }
+
+      if (
+        website_url &&
+        !/^https:\/\//i.test(website_url.trim())
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: 'Website URL must start with https://'
+        });
+      }
+
+      if (
+        !/^https:\/\//i.test(image_url)
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid announcement image URL'
+        });
+      }
+
+      // FIND USER PROFILE
+      const { data: seller, error: sellerError } = await supabase
+        .from('users_profile')
+        .select('id, phone')
+        .eq('phone', cleanPhone)
+        .maybeSingle();
+
+      if (sellerError) throw sellerError;
+
+      if (!seller) {
+        return res.status(404).json({
+          success: false,
+          error: 'User profile not found'
+        });
+      }
+
+      // CREATE PENDING ANNOUNCEMENT
+      const { data: announcementData, error: announcementError } =
+        await supabase
+          .from('announcements')
+          .insert({
+            created_by: seller.id,
+            title: title.trim(),
+            description: description.trim(),
+            image_url,
+            contact_number: contact_number.trim(),
+            website_url: website_url?.trim() || null,
+            announcement_type: 'paid',
+            is_admin_announcement: false,
+            target_audience,
+            package_days: selectedPlan.validity,
+            amount: selectedPlan.amount,
+            status: 'pending_payment'
+          })
+          .select()
+          .single();
+
+      if (announcementError) throw announcementError;
+
+      announcement = announcementData;
+    }
+
     // CREATE RAZORPAY INSTANCE
     const razorpay = new Razorpay({
       key_id: keyId,
       key_secret: keySecret
     });
 
-    // CREATE ORDER
+    // CREATE RAZORPAY ORDER
     const order = await razorpay.orders.create({
       amount: selectedPlan.amount * 100,
       currency: 'INR',
@@ -147,9 +263,34 @@ export default async function handler(req, res) {
         plan_type: selectedPlan.type,
         scope: selectedPlan.scope || '',
         radius_km: String(selectedPlan.radius || ''),
-        validity_days: String(selectedPlan.validity || '')
+        validity_days: String(selectedPlan.validity || ''),
+        announcement_id: announcement?.id || ''
       }
     });
+
+    // SAVE ANNOUNCEMENT PAYMENT RECORD
+    if (announcement) {
+      const { error: paymentError } = await supabase
+        .from('announcement_payments')
+        .insert({
+          announcement_id: announcement.id,
+          user_id: announcement.created_by,
+          razorpay_order_id: order.id,
+          amount: selectedPlan.amount,
+          payment_status: 'created'
+        });
+
+      if (paymentError) {
+        // Remove pending announcement if payment record creation fails
+        await supabase
+          .from('announcements')
+          .delete()
+          .eq('id', announcement.id)
+          .eq('status', 'pending_payment');
+
+        throw paymentError;
+      }
+    }
 
     // SUCCESS RESPONSE
     return res.status(200).json({
@@ -161,7 +302,10 @@ export default async function handler(req, res) {
       planType: selectedPlan.type,
       plan: cleanPlan,
       listingId: cleanListingId,
-      validityDays: selectedPlan.validity || 30
+      validityDays: selectedPlan.validity || 30,
+
+      // NEW ANNOUNCEMENT RESPONSE
+      announcementId: announcement?.id || null
     });
 
   } catch (error) {

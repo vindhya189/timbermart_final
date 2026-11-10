@@ -4,7 +4,15 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { supabase } from '../lib/supabase';
 
-const tabs = ['Pending', 'Approved', 'Rejected', 'All', 'Carpenters', 'Payments'];
+const tabs = [
+  'Pending',
+  'Approved',
+  'Rejected',
+  'All',
+  'Carpenters',
+  'Payments',
+  'Announcements'
+];
 
 export default function Admin() {
   const router = useRouter();
@@ -12,6 +20,20 @@ export default function Admin() {
   const [listings, setListings] = useState([]);
   const [carpenters, setCarpenters] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
+
+const [announcementForm, setAnnouncementForm] = useState({
+  title: '',
+  description: '',
+  image_url: '',
+  contact_number: '',
+  website_url: '',
+  target_audience: 'all',
+  expires_at: ''
+});
+
+const [announcementSaving, setAnnouncementSaving] = useState(false);
+const [rejectingId, setRejectingId] = useState('');
   const [tab, setTab] = useState('Pending');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -62,6 +84,9 @@ export default function Admin() {
       setListings(Array.isArray(result.listings) ? result.listings : []);
       setCarpenters(Array.isArray(result.carpenters) ? result.carpenters : []);
       setPayments(Array.isArray(result.payments) ? result.payments : []);
+      setAnnouncements(
+  Array.isArray(result.announcements) ? result.announcements : []
+);
     } catch (error) {
       setApiError(error.message || 'Unable to load admin data.');
 
@@ -163,6 +188,164 @@ export default function Admin() {
       setActionId('');
     }
   };
+  
+const [imageUploading, setImageUploading] = useState(false);
+
+const uploadAnnouncementImage = async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+    setNotice({
+      type: 'error',
+      text: 'JPG, PNG or WEBP images only.'
+    });
+    e.target.value = '';
+    return;
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    setNotice({
+      type: 'error',
+      text: 'Image must be smaller than 5 MB.'
+    });
+    e.target.value = '';
+    return;
+  }
+
+  setImageUploading(true);
+
+  try {
+    const { data: sessionData, error: sessionError } =
+      await supabase.auth.getSession();
+
+    if (sessionError || !sessionData?.session) {
+      throw new Error('Please login again.');
+    }
+
+    const extension = file.name.split('.').pop().toLowerCase();
+    const filePath = `official/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('announcements')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.type
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage
+      .from('announcements')
+      .getPublicUrl(filePath);
+
+    setAnnouncementForm(current => ({
+      ...current,
+      image_url: data.publicUrl
+    }));
+
+    setNotice({
+      type: 'success',
+      text: 'Announcement image uploaded successfully.'
+    });
+  } catch (error) {
+    setNotice({
+      type: 'error',
+      text: error.message || 'Image upload failed.'
+    });
+  } finally {
+    setImageUploading(false);
+  }
+};
+
+  const createOfficialAnnouncement = async (e) => {
+  e.preventDefault();
+
+  if (announcementSaving) return;
+
+  setAnnouncementSaving(true);
+  setNotice(null);
+
+  try {
+    const result = await apiRequest('POST', {
+      action: 'create_admin_announcement',
+      ...announcementForm,
+      expires_at: announcementForm.expires_at
+        ? new Date(announcementForm.expires_at).toISOString()
+        : null
+    });
+
+    setNotice({
+      type: 'success',
+      text: result.message || 'Official announcement published.'
+    });
+
+    setAnnouncementForm({
+      title: '',
+      description: '',
+      image_url: '',
+      contact_number: '',
+      website_url: '',
+      target_audience: 'all',
+      expires_at: ''
+    });
+
+    await loadAll(false);
+  } catch (error) {
+    setNotice({
+      type: 'error',
+      text: error.message || 'Announcement creation failed.'
+    });
+  } finally {
+    setAnnouncementSaving(false);
+  }
+};
+
+const approveAnnouncement = async (id) => {
+  if (!window.confirm('Approve and publish this paid promotion?')) return;
+
+  await runAction(
+    'approve_announcement',
+    id,
+    {},
+    'Promotion approved and published.'
+  );
+};
+
+const rejectAnnouncement = async (id) => {
+  const reason = window.prompt('Enter rejection reason:');
+
+  if (!reason || !reason.trim()) return;
+
+  if (actionId) return;
+
+  setActionId(String(id));
+  setNotice(null);
+
+  try {
+    const result = await apiRequest('POST', {
+      action: 'reject_announcement',
+      id,
+      reason: reason.trim()
+    });
+
+    setNotice({
+      type: 'success',
+      text: result.message || 'Promotion rejected.'
+    });
+
+    await loadAll(false);
+  } catch (error) {
+    setNotice({
+      type: 'error',
+      text: error.message || 'Rejection failed.'
+    });
+  } finally {
+    setActionId('');
+  }
+};
+
 
   const logout = async () => {
     await supabase.auth.signOut();
@@ -308,7 +491,8 @@ export default function Admin() {
                    item === 'Rejected' ? ` (${counts.rejected})` :
                    item === 'All' ? ` (${counts.all})` :
                    item === 'Carpenters' ? ` (${counts.carpenters})` :
-                   ` (${counts.payments})`}
+                   item === 'Payments' ? ` (${counts.payments})` :
+                   ` (${announcements.length})`}
                 </button>
               ))}
             </div>
@@ -609,7 +793,286 @@ export default function Admin() {
               </div>
             )}
           </section>
+
         )}
+
+{tab === 'Announcements' && (
+  <section className="space-y-6">
+
+    {/* ADMIN FREE ANNOUNCEMENT */}
+    <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+      <div className="mb-4">
+        <h2 className="text-xl font-black">
+          Create Official Announcement
+        </h2>
+        <p className="text-sm text-slate-500 mt-1">
+          Admin-only free announcement. Users will not see a free package option.
+        </p>
+      </div>
+
+      <form onSubmit={createOfficialAnnouncement} className="space-y-3">
+
+        <input
+          required
+          maxLength={150}
+          value={announcementForm.title}
+          onChange={e => setAnnouncementForm({
+            ...announcementForm,
+            title: e.target.value
+          })}
+          placeholder="Announcement title"
+          className="w-full border rounded-xl p-3"
+        />
+
+        <textarea
+          required
+          maxLength={5000}
+          rows={4}
+          value={announcementForm.description}
+          onChange={e => setAnnouncementForm({
+            ...announcementForm,
+            description: e.target.value
+          })}
+          placeholder="Announcement description"
+          className="w-full border rounded-xl p-3"
+        />
+
+        
+<div>
+  <label className="block text-sm font-bold mb-2">
+    Upload Announcement Image
+  </label>
+
+  <input
+    type="file"
+    accept="image/jpeg,image/png,image/webp"
+    onChange={uploadAnnouncementImage}
+    disabled={imageUploading || announcementSaving}
+    className="w-full border rounded-xl p-3 bg-slate-50"
+  />
+
+  <p className="text-xs text-slate-500 mt-1">
+    JPG, PNG, WEBP • Maximum 5 MB
+  </p>
+
+  {imageUploading && (
+    <p className="text-sm text-blue-600 mt-2">
+      Uploading image...
+    </p>
+  )}
+
+  {announcementForm.image_url && (
+    <div className="mt-3">
+      <img
+        src={announcementForm.image_url}
+        alt="Announcement preview"
+        className="w-full max-w-sm h-44 object-cover rounded-xl border"
+      />
+
+      <button
+        type="button"
+        onClick={() => setAnnouncementForm(current => ({
+          ...current,
+          image_url: ''
+        }))}
+        className="mt-2 text-sm text-red-600 font-bold"
+      >
+        Remove selected image
+      </button>
+    </div>
+  )}
+</div>
+
+
+        <input
+          value={announcementForm.contact_number}
+          onChange={e => setAnnouncementForm({
+            ...announcementForm,
+            contact_number: e.target.value
+          })}
+          placeholder="Contact number (optional)"
+          className="w-full border rounded-xl p-3"
+        />
+
+        <input
+          type="url"
+          value={announcementForm.website_url}
+          onChange={e => setAnnouncementForm({
+            ...announcementForm,
+            website_url: e.target.value
+          })}
+          placeholder="Website URL (HTTPS, optional)"
+          className="w-full border rounded-xl p-3"
+        />
+
+        <div>
+          <label className="block text-sm font-bold mb-2">
+            Target Audience
+          </label>
+          <select
+            value={announcementForm.target_audience}
+            onChange={e => setAnnouncementForm({
+              ...announcementForm,
+              target_audience: e.target.value
+            })}
+            className="w-full border rounded-xl p-3"
+          >
+            <option value="all">All Users</option>
+            <option value="farmers">Farmers</option>
+            <option value="merchants">Merchants</option>
+            <option value="sawmills">Sawmills</option>
+            <option value="carpenters">Carpenters</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold mb-2">
+            Expiry Date (Optional)
+          </label>
+          <input
+            type="datetime-local"
+            value={announcementForm.expires_at}
+            onChange={e => setAnnouncementForm({
+              ...announcementForm,
+              expires_at: e.target.value
+            })}
+            className="w-full border rounded-xl p-3"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={announcementSaving || imageUploading}
+          className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold p-3 disabled:opacity-50"
+        >
+          {announcementSaving
+            ? 'Publishing...'
+            : 'Publish Official Announcement'}
+        </button>
+      </form>
+    </div>
+
+    {/* ANNOUNCEMENT LIST */}
+    <div>
+      <h2 className="text-xl font-black mb-3">
+        Announcement Management
+      </h2>
+
+      {announcements.length === 0 ? (
+        <Empty message="No announcements found." />
+      ) : (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          {announcements.map(item => (
+            <article
+              key={item.id}
+              className="bg-white border rounded-2xl p-4 shadow-sm"
+            >
+              <div className="flex flex-wrap gap-2 mb-3">
+                <Badge color={
+                  item.status === 'active' ? 'green' :
+                  item.status === 'rejected' ? 'red' : 'amber'
+                }>
+                  {item.status}
+                </Badge>
+
+                <Badge color="blue">
+                  {item.is_admin_announcement
+                    ? 'OFFICIAL'
+                    : 'PAID PROMOTION'}
+                </Badge>
+              </div>
+
+              {item.image_url && (
+                <img
+                  src={item.image_url}
+                  alt={item.title}
+                  className="w-full h-44 object-cover rounded-xl mb-3"
+                  onError={e => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              )}
+
+              <h3 className="font-black text-lg">
+                {item.title}
+              </h3>
+
+              <p className="text-sm text-slate-600 mt-2 whitespace-pre-wrap">
+                {item.description}
+              </p>
+
+              <div className="text-sm text-slate-500 mt-3 space-y-1">
+                <p>Audience: {item.target_audience}</p>
+                <p>Amount: ₹{item.amount}</p>
+                {item.package_days && (
+                  <p>Package: {item.package_days} days</p>
+                )}
+                {item.expires_at && (
+                  <p>
+                    Expires: {new Date(item.expires_at).toLocaleString('en-IN')}
+                  </p>
+                )}
+                {item.rejection_reason && (
+                  <p className="text-red-600">
+                    Reason: {item.rejection_reason}
+                  </p>
+                )}
+              </div>
+
+{item.status === 'pending_approval' &&
+  !item.is_admin_announcement && (
+    <div className="flex flex-wrap gap-2 mt-4">
+      <ActionButton
+        color="green"
+        disabled={!!actionId}
+        busy={actionId === String(item.id)}
+        onClick={() => approveAnnouncement(item.id)}
+      >
+        Approve & Publish
+      </ActionButton>
+
+      <ActionButton
+        color="red"
+        disabled={!!actionId}
+        busy={actionId === String(item.id)}
+        onClick={() => rejectAnnouncement(item.id)}
+      >
+        Reject
+      </ActionButton>
+    </div>
+  )}
+
+<div className="mt-4 border-t pt-3">
+  <ActionButton
+    color="red"
+    disabled={!!actionId}
+    busy={actionId === String(item.id)}
+    onClick={() => {
+      if (window.confirm(`Delete "${item.title}" permanently?`)) {
+        runAction(
+          'delete_announcement',
+          item.id,
+          {},
+          'Announcement deleted successfully.'
+        );
+      }
+    }}
+  >
+    🗑 Delete Announcement
+  </ActionButton>
+</div>
+
+
+              
+                
+            </article>
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+)}
+
 
         <footer className="mt-8 flex flex-wrap gap-3 justify-between text-sm text-slate-500">
           <span>TimberMart Admin Dashboard</span>

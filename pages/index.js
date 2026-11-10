@@ -69,6 +69,11 @@ export default function Home() {
   const [tab, setTab] = useState('All');
   const [showFilters, setShowFilters] = useState(false);
   const [showWhatsAppMenu, setShowWhatsAppMenu] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+
 
   // Favorites now come from Supabase
   const [favs, setFavs] = useState([]);
@@ -167,6 +172,76 @@ export default function Home() {
     }
   };
 
+
+  const loadNotifications = async (userId) => {
+  if (!userId) return;
+
+  setNotificationsLoading(true);
+
+  const { data, error } = await supabase
+    .from('announcement_notifications')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  if (error) {
+    console.error(error);
+  } else {
+    setNotifications(data || []);
+  }
+
+  setNotificationsLoading(false);
+};
+
+const markNotificationRead = async (notification) => {
+  if (!notification || notification.is_read) return;
+
+  const readAt = new Date().toISOString();
+
+  const { error } = await supabase
+    .from('announcement_notifications')
+    .update({ is_read: true, read_at: readAt })
+    .eq('id', notification.id)
+    .eq('user_id', currentUserId);
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  setNotifications(prev =>
+    prev.map(item =>
+      item.id === notification.id
+        ? { ...item, is_read: true, read_at: readAt }
+        : item
+    )
+  );
+};
+
+
+
+const handleNotificationClick = async (notification) => {
+  if (!notification?.announcement_id) {
+    alert('Announcement details not available.');
+    return;
+  }
+
+  // Mark notification as read
+  await markNotificationRead(notification);
+
+  // Close notification dropdown
+  setShowNotifications(false);
+
+  // Open separate announcement details page
+  router.push(`/announcements/${notification.announcement_id}`);
+};
+
+
+
+const unreadNotificationCount =
+  notifications.filter(item => !item.is_read).length;
+
   // ==========================================
   // CHECK LOGIN SESSION
   // ==========================================
@@ -190,6 +265,8 @@ export default function Home() {
         router.replace('/login');
         return;
       }
+      setCurrentUserId(session.user.id);
+      await loadNotifications(session.user.id);
 
       // Keep existing login flow.
       await load();
@@ -211,6 +288,19 @@ export default function Home() {
       active = false;
     };
   }, []);
+
+
+  // Refresh notifications periodically while the homepage is open.
+useEffect(() => {
+  if (!currentUserId) return;
+
+  const timer = setInterval(
+    () => loadNotifications(currentUserId),
+    30000
+  );
+
+  return () => clearInterval(timer);
+}, [currentUserId]);
 
   // ==========================================
   // ADD / REMOVE FAVORITE IN SUPABASE
@@ -536,6 +626,53 @@ export default function Home() {
               >
                 👤
               </Link>
+              {/* NOTIFICATION BELL */}
+<div className="relative">
+  <button
+    type="button"
+    onClick={() => {
+      setShowNotifications(!showNotifications);
+      if (currentUserId) loadNotifications(currentUserId);
+    }}
+    className="relative w-9 h-9 rounded-full bg-white/15 border border-white/30 flex items-center justify-center text-xl"
+  >
+    🔔
+
+    {unreadNotificationCount > 0 && (
+      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-black flex items-center justify-center">
+        {unreadNotificationCount}
+      </span>
+    )}
+  </button>
+
+  {showNotifications && (
+    <div className="absolute right-0 top-12 w-72 max-h-96 overflow-y-auto bg-white text-black rounded-xl shadow-xl z-[100]">
+      <div className="p-3 border-b flex justify-between">
+        <b>Notifications</b>
+        <button onClick={() => setShowNotifications(false)}>✕</button>
+      </div>
+
+      {notifications.length === 0 ? (
+        <p className="p-4 text-sm text-gray-500">
+          No notifications yet.
+        </p>
+      ) : (
+        notifications.map(item => (
+          <button
+            key={item.id}
+            onClick={() => handleNotificationClick(item)}
+            className="w-full text-left p-3 border-b hover:bg-green-50"
+          >
+            <b className="text-sm">{item.title}</b>
+            <p className="text-xs text-gray-600 mt-1">
+              {item.message}
+            </p>
+          </button>
+        ))
+      )}
+    </div>
+  )}
+</div>
 
               <button
                 onClick={async () => {
@@ -553,12 +690,7 @@ export default function Home() {
                 Logout
               </button>
 
-              <Link
-                href="/dynamic-listing"
-                className="bg-[#ffc629] text-[#17220f] px-3 py-2 rounded-full text-[11px] font-black shadow"
-              >
-                + LIST
-              </Link>
+              
             </div>
           </div>
         </header>
@@ -667,6 +799,28 @@ export default function Home() {
               </div>
             ))}
           </div>
+          {/* TIMBERMART PROMOTE YOUR BUSINESS */}
+<Link
+  href="/promote"
+  className="block mt-4 rounded-[20px] bg-[#07552c] p-4 text-white shadow-md"
+>
+  <span className="inline-block bg-[#087c3e] text-[#00e676] px-3 py-1 rounded-full text-[10px] font-bold">
+    NEW FEATURE
+  </span>
+
+  <h2 className="text-[21px] font-extrabold mt-3">
+    📢 Promote Your Business
+  </h2>
+
+  <p className="text-[12px] text-green-50 mt-2 leading-relaxed">
+    Reach thousands of TimberMart users with your business
+    offers and announcements.
+  </p>
+
+  <span className="flex items-center justify-center gap-2 mt-3 w-full bg-[#ffc629] text-[#17220f] rounded-xl py-3 text-[14px] font-black">
+    Create Announcement →
+  </span>
+</Link>
 
           {/* QUICK ACTIONS */}
           <div className="grid grid-cols-2 gap-2.5 mt-4">
