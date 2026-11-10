@@ -51,12 +51,11 @@ export default function ListTimber() {
   const [title, setTitle] = useState('');
 
   // Complete address
-  const [houseNumber, setHouseNumber] = useState('');
-  const [street, setStreet] = useState('');
+
   const [village, setVillage] = useState('');
-  const [mandal, setMandal] = useState('');
+
   const [district, setDistrict] = useState('');
-  const [stateName, setStateName] = useState('Andhra Pradesh');
+
   const [pincode, setPincode] = useState('');
   const [city, setCity] = useState('');
 
@@ -466,7 +465,9 @@ const registeredPhone = String(profile.phone).trim();
         llocation_village: village.trim(),
 location_city: city.trim(),
 location_district: district.trim(),
-full_address: [village, city, district].filter(Boolean).join(', '),
+full_address: [village, city, district]
+.filter(Boolean)
+.join(', '),
 
         whatsapp_number: registeredPhone,
         user_id: profile.id,
