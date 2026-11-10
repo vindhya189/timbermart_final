@@ -461,13 +461,11 @@ const registeredPhone = String(profile.phone).trim();
         pieces: pieces ? Number(pieces) : null,
         cft: cft ? Number(cft) : null,
 
-        location_village: village.trim(),
-        location_mandal: mandal.trim(),
-        location_district: district.trim(),
-        location_state: stateName.trim(),
+        
+        
 
-        house_number: houseNumber.trim(),
-        street: street.trim(),
+        
+        
         location_pincode: pincode.trim(),
         full_address: fullAddress,
 
@@ -1170,18 +1168,7 @@ const registeredPhone = String(profile.phone).trim();
             </button>
 
             <div className="grid grid-cols-2 gap-3 mt-4">
-              <input
-                value={houseNumber}
-                onChange={e => setHouseNumber(e.target.value)}
-                placeholder="House / Door Number"
-                className={inputClass}
-              />
-              <input
-                value={street}
-                onChange={e => setStreet(e.target.value)}
-                placeholder="Street / Area"
-                className={inputClass}
-              />
+            
             </div>
 
             <input

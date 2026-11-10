@@ -1,0 +1,48 @@
+
+name: timbermart_mobile
+description: "TimberMart Official Android Application"
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  webview_flutter: ^4.14.1
+  webview_flutter_android: ^4.14.1
+  file_picker: ^13.3.2
+  image_picker: ^1.2.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.8
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/branding/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/branding/timbermart_app_icon.png
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: assets/branding/timbermart_app_icon.png
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/branding/timbermart_splash_logo.png
+  android: true
+  ios: true
+  android_12:
+    color: "#FFFFFF"
+    image: assets/branding/timbermart_app_icon.png
