@@ -77,7 +77,6 @@ async function notifyAllUsers(announcement) {
   const userIds = [];
   const pageSize = 1000;
 
-  // Get all registered users
   for (let from = 0; ; from += pageSize) {
     const { data, error } = await supabaseAdmin
       .from('users_profile')
@@ -98,11 +97,9 @@ async function notifyAllUsers(announcement) {
   let insertedCount = 0;
   const batchSize = 400;
 
-  // Insert notifications in batches
   for (let i = 0; i < userIds.length; i += batchSize) {
     const batch = userIds.slice(i, i + batchSize);
 
-    // Check existing notifications to prevent duplicates
     const { data: existing, error: existingError } =
       await supabaseAdmin
         .from('announcement_notifications')
@@ -145,6 +142,44 @@ async function notifyAllUsers(announcement) {
 }
 
 // =========================
+// FETCH ALL REGISTERED USERS
+// =========================
+
+async function getAllRegisteredUsers() {
+  const pageSize = 1000;
+  const users = [];
+
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabaseAdmin
+      .from('users_profile')
+      .select(`
+        id,
+        phone,
+        name,
+        location,
+        photo_url,
+        is_trusted,
+        total_posts,
+        created_at,
+        email,
+        role,
+        business_role
+      `)
+      .order('created_at', { ascending: false })
+      .range(from, from + pageSize - 1);
+
+    if (error) throw error;
+
+    const page = data || [];
+    users.push(...page);
+
+    if (page.length < pageSize) break;
+  }
+
+  return users;
+}
+
+// =========================
 // ADMIN API HANDLER
 // =========================
 
@@ -168,6 +203,7 @@ export default async function handler(req, res) {
         carpenterResult,
         paymentResult,
         announcementResult,
+        usersResult,
       ] = await Promise.all([
         supabaseAdmin
           .from('listings')
@@ -192,6 +228,8 @@ export default async function handler(req, res) {
           .select('*')
           .order('created_at', { ascending: false })
           .limit(300),
+
+        getAllRegisteredUsers(),
       ]);
 
       const dbError =
@@ -212,6 +250,8 @@ export default async function handler(req, res) {
         carpenters: carpenterResult.data || [],
         payments: paymentResult.data || [],
         announcements: announcementResult.data || [],
+        users: usersResult || [],
+        usersCount: (usersResult || []).length,
       });
     }
 
